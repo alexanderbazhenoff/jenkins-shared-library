@@ -52,16 +52,15 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
         String statesTextTable = ''
         states.each { key, value ->
             if (value instanceof Map) {
-                statesTextTable += value.name.padLeft(16) + ' ' + value.state.toString()
-                        .replace('false', '[FAILED] ')
-                        .replace('true', '[SUCCESS]') + ' ' + value.url.padLeft(2) + '\n'
+                statesTextTable += String.format('%s %s %s\n, ', value.name.padLeft(16), value.state.toString().
+                        replace('false', '[FAILED] ').replace('true', '[SUCCESS]'), value.url.padLeft(2))
             }
         }
         writeFile file: logName, text: statesTextTable
         archiveArtifacts allowEmptyArchive: true, artifacts: logName
     }
-    outMsg(eventNumber, name + ': ' + state.toString().replace('false', 'FAILED')
-            .replace('true', 'SUCCESS') + ', URL: ' + jobUrl)
+    outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
+            .replace('true', 'SUCCESS'), jobUrl))
     return states
 }
 
@@ -203,7 +202,7 @@ def outMsg(Integer eventNumber, String text) {
  *           status.content_length - byte length of the HTTP body (read:
  *                          https://stackoverflow.com/questions/2773396/whats-the-content-length-field-in-http-header ),
  *           status.response_is_chunked - response is chunked (read:
- *                                        https://ru.wikipedia.org/wiki/Chunked_transfer_encoding ),
+ *                                        https://ru.wikipedia.org/wiki/Chunked_transfer_encoding),
  *           status.response_content_encoding - encoding of response (none if not encoded),
  *           status.response_content - content of http response (e.g: 'ok').
  */
@@ -449,6 +448,7 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
 
 /**
  * Read all files content from the directory and sub-directories into a map.
+ *
  * @param path - path to read all files in subdirectories,
  * @param namePrefix - name prefix which will be added to map names,
  * @param namePostfix - name postfix which will be added to map postfix,
@@ -465,7 +465,8 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
                     .split('\n').toList()
             if (dirList)
                 dirList.findAll { !it.matches(excludeRegexp) }.each {
-                    Map folderContent = readFilesToMap(it, String.format('%s%s_', namePrefix, it), namePostfix)
+                    Map folderContent = readFilesToMap(it.toString(), String.format('%s%s_', namePrefix, it),
+                            namePostfix)
                     if (folderContent)
                         folderToMapResults += folderContent
                 }
