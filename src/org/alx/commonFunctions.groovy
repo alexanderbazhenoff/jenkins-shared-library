@@ -895,3 +895,20 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
     return [options, descriptions]
 }
 
+/**
+ * Grep only filed states from stages status list in string format.
+ *
+ * @param states - map including key with these states steps
+ * @param inputKeyName - key name in this map to get failed states from
+ * @return - string of failed states list
+ */
+@NonCPS
+static String grepFailedStates(Map states, String inputKeyName) {
+    println String.format('Grep failed states from:\n%s', states[inputKeyName])
+    if (states.find{ it.key == inputKeyName }?.value) {
+        return states[inputKeyName].readLines().grep { it.contains('[FAILED]') }.join('\n')
+    } else {
+        return ''
+    }
+}
+
