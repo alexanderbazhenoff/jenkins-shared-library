@@ -82,7 +82,7 @@ static String readableJobParams(List params) {
  * @param checkName - check name item exists in map, otherwise ignore
  * @return - jenkins job params
  */
-ArrayList mapToJenkinsJobParams(Map config, Boolean checkName=true) {
+ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     String configName
     ArrayList jobParams = []
     try {
@@ -96,27 +96,27 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName=true) {
                 configName = '<undefined_config_name>'
             }
         }
-        if (config.get('enabled') && config.get('jobName')) {
-            if (config.enabled && config.jobName?.trim()) {
+        if (config.get('enabled') && config.get('jobname')) {
+            if (config.enabled && config.jobname?.trim()) {
                 outMsg(0, String.format('Processing current %s config: \n%s', configName,
                         (new JsonBuilder(config).toPrettyString())))
                 jobParams = mapConfigToJenkinsJobParam(config.findAll {
-                    !it.key.startsWith('msg') && it.key != 'name' && it.key != 'enabled' && it.key != 'jobName'
+                    !it.key.startsWith('msg') && it.key != 'name' && it.key != 'enabled' && it.key != 'jobname'
                 })
                 outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
                         readableJobParams(jobParams)))
-            } else if (config.enabled && !config.jobName?.trim()) {
+            } else if (config.enabled && !config.jobname?.trim()) {
                 outMsg(2, String.format('Unable to perform regression testing for %s config because ' +
-                        'jobName in this config wasn\'t set. Skipping testing this config.', configName))
+                        'jobname in this config wasn\'t set. Skipping testing this config.', configName))
             } else if (!config.enabled) {
                 outMsg(1, String.format('%s config disabled, skipping.', configName))
             }
         } else {
-            outMsg(3, String.format( 'Unable to find \'enabled\' and/or \'jobName\' param(s) in %s ' +
+            outMsg(3, String.format( 'Unable to find \'enabled\' and/or \'jobname\' param(s) in %s ' +
                     'config. Please check and try again. Config was skipped.', configName))
         }
     } catch (Exception err) {
-        outMsg(3, 'Converting yaml config to jenkins job params error: %s' + readableError(err))
+        outMsg(3, String.format('Converting yaml config to jenkins job params error: %s', readableError(err)))
     }
     return jobParams
 }
@@ -279,7 +279,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
 Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
     Boolean overallSendMessageState = true
     if (text.length() >= 4000) {
-        List splitMessages =[]
+        ArrayList splitMessages = []
         List splitByEnterMessage = text.tokenize('\n').toList()
         Integer messageIndex = 0
         splitMessages[messageIndex] = ''
@@ -302,7 +302,7 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
             }
         }
         splitMessages.each {
-            if (!sendMattermostChannelSingleMessage(url, it, verboseMsg))
+            if (!sendMattermostChannelSingleMessage(url, it.toString(), verboseMsg))
                 overallSendMessageState = false
         }
         return overallSendMessageState
@@ -503,7 +503,7 @@ static ArrayList getVariablesFromRegressionConfigMap(String text) {
  */
 Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String noDataBindingString) {
     Map messageMap = flattenNestedMap(params)
-    List messageTemplateVariablesList = getVariablesFromRegressionConfigMap(messageMap.toString())
+    ArrayList messageTemplateVariablesList = getVariablesFromRegressionConfigMap(messageMap.toString())
     Map resultsBinding = [:]
     String bindingLogMessage = 'replaceVariablesInMapItemsWithValues | Binding log:\n'
     messageTemplateVariablesList.each {
@@ -516,7 +516,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
                 resultsBinding[it] = noDataBindingString
             } else {
                 bindingLogMessage += String.format('\'%s\' not found, leaving this unchanged: \'$%s\'\n', it, it)
-                resultsBinding[it] = '$' + it
+                resultsBinding[it] = String.format('$%s', it)
             }
         }
     }
@@ -541,7 +541,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
  */
 Boolean saveMapToPropertiesFile(String path, Map values) {
     try {
-        writeFile(file: path, text: values.collect{it.key + "=" + it.value}.join('\n'))
+        writeFile(file: path, text: values.collect {it.key + "=" + it.value}.join('\n'))
         return true
     } catch (Exception err) {
         outMsg(3, String.format('Unable to save \'%s\' with values: \n%s\nbecause of:\n%s', path,
@@ -655,8 +655,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitlabUrl, String ansibleG
  * @return - success (true when ok)
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitlabUrl,
-                   String ansibleGitlabBranch, String ansibleExtras='', List ansibleCollections=[],
-                   String ansibleInstallation='', Boolean cleanupBeforeAnsibleClone = true,
+                   String ansibleGitlabBranch, String ansibleExtras = '', List ansibleCollections = [],
+                   String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
                    String gitCredentialsId = GitCredentialsID) {
     Boolean runAnsibleState = false
     try {
@@ -703,9 +703,8 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
  */
 def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
-        ArrayList itemsToClean = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] :
-                [it] + [sh(script: String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true)
-                                .toString()]
+        ArrayList itemsToClean = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] +
+                [sh(script: String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).toString()]
         itemsToClean.each { host ->
             if (host?.trim()) sh String.format('ssh-keygen -f "${HOME}/.ssh/known_hosts" -R %s', host)
         }
@@ -723,8 +722,8 @@ def cleanSshHostsFingerprints(List hostsToClean) {
  * @param waitFor - wait for completion
  * @return - run wrapper of current job or pipeline build, or null for skipped run
  */
-def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam=false,
-                     Boolean propagateErrors=true, Boolean waitFor=true) {
+def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
+                     Boolean propagateErrors = true, Boolean waitFor = true) {
     if (runJobWithDryRunParam)
         jobParams += [booleanParam(name: 'DRY_RUN', value: env.DRY_RUN.toBoolean())]
     if (dryRun)
@@ -795,8 +794,8 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @param timeOut - timeout (minutes)
  * @return - true when success
  */
-Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp=true,
-                      Integer timeOut=1) {
+Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
+                      Integer timeOut = 1) {
     try {
         sh String.format("ssh-keygen -f '/var/lib/jenkins/.ssh/known_hosts' -R %s", sshHostname)
         timeout(timeOut) {
@@ -830,8 +829,8 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
  * @return - bash return code in string format or bash stdout (see returnStatus)
  */
 String runBashScp(String sshHostname, String sshUsername, String sshPassword, String sourcePath,
-                  String destinationPath, Boolean returnStatus=true, Boolean returnStdout=false,
-                  Boolean scpDirection=true) {
+                  String destinationPath, Boolean returnStatus = true, Boolean returnStdout = false,
+                  Boolean scpDirection = true) {
     writeFile file: 'pass.txt', text: sshPassword
     String scpPathArgs = String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
     if (scpDirection)
@@ -859,12 +858,13 @@ def interruptPipelineOk(Integer sleepSeconds=2) {
  * @param filterByLabel - when true filter by node label, otherwise filter by node name
  * @return - list of nodes
  */
-ArrayList getJenkinsNodes(String filterMask='', Boolean filterByLabel=false) {
+ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false) {
     Object jenkinsComputers = jenkins.model.Jenkins.get().computers
     if (!filterMask.trim())
-        return jenkinsComputers.collect{ it.node.selfLabel.name }
+        return jenkinsComputers.collect { it.node.selfLabel.name }
     if (!filterByLabel)
-        return jenkinsComputers.findAll{ it.node.selfLabel.name.contains(filterMask) }.collect{ it.node.selfLabel.name }
+        return jenkinsComputers.findAll { it.node.selfLabel.name.contains(filterMask) }.collect {
+            it.node.selfLabel.name }
     ArrayList nodes = []
     jenkinsComputers.each {
         if (it.node.labelString.contains(filterMask))
@@ -883,8 +883,8 @@ ArrayList getJenkinsNodes(String filterMask='', Boolean filterByLabel=false) {
  * @return - list of [enabled options list, descriptions of enabled options list]
  */
 static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
-    List options = []
-    List descriptions = []
+    ArrayList options = []
+    ArrayList descriptions = []
     optionsMap.each {
         if (it.value.get('state')) {
             options.add(it.key)

@@ -18,7 +18,8 @@ node(master) {
     
     // your pipeline code and call this object by 'CommonFunctions.<functionName>', e.g:
     CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.split(' ').toList())
-    // where IP_LIST is space separated string IP list which is defined by pipeline parameter IP_LIST
+    // where IP_LIST is a space separated string IP list which is defined by pipeline 
+    // parameter IP_LIST
 }
 ```
 3. Read `Groovydoc` in the comments of file(s), e.g:
