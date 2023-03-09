@@ -737,7 +737,6 @@ def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolea
     }
 }
 
-
 /** Serialize environment variables into map
  *
  * @param envVars - environment variables.
@@ -781,7 +780,6 @@ static fixMapValuesDataTyping(Map sourceMap) {
     }
     return resultMap
 }
-
 
 /**
  * Wait ssh host up/down.
