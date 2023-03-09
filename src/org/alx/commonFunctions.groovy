@@ -37,15 +37,14 @@ GitCredentialsID = '********' as String
  * Add current step (or phase) state to state map and (optional) save steps states with URLs to log file.
  *
  * @param states - map with pipeline steps (or phases) names and states.
- * @param name -  name of the current step (or phase).
+ * @param name - name of the current step (or phase).
  * @param state - current state: false|true.
  * @param jobUrl - url of the last job run.
  * @param logName - path and name of the logfile to save (leave them blank to skip saving).
  * @return - map with pipeline steps (or phases) names and states including current step (or phase) state.
  */
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
-    Integer eventNumber = 0
-    if (!state) eventNumber = 3
+    Integer eventNumber = (!state) ? 3 : 0
     if (!jobUrl?.trim()) jobUrl = ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
     if (logName?.trim()) {
@@ -192,15 +191,15 @@ def outMsg(Integer eventNumber, String text) {
 /**
  * Post HTTP request.
  *
- * @param httpUrl - http(s) URL,
- * @param data - data to send,
- * @param headerType - header encoding type (e.g: 'application/x-www-form-urlencoded')
- * @param contentType - content encoding (e.g: 'application/json', 'text/xml')
+ * @param httpUrl - http(s) URL.
+ * @param data - data to send.
+ * @param headerType - header encoding type (e.g: 'application/x-www-form-urlencoded').
+ * @param contentType - content encoding (e.g: 'application/json', 'text/xml').
  * @return - status map:
  *           status.request_line - POST request line,
  *           status.response_status_line - response status line (e.g: 'HTTP/1.1 200 OK'),
  *           status.content_length - byte length of the HTTP body (read:
- *                          https://stackoverflow.com/questions/2773396/whats-the-content-length-field-in-http-header ),
+ *                          https://stackoverflow.com/questions/2773396/whats-the-content-length-field-in-http-header),
  *           status.response_is_chunked - response is chunked (read:
  *                                        https://ru.wikipedia.org/wiki/Chunked_transfer_encoding),
  *           status.response_content_encoding - encoding of response (none if not encoded),
@@ -252,8 +251,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
     if (verboseLevel > 0) println mattermostResponseData
     if (mattermostResponseData) {
-        if (verboseLevel == 2)
-            println String.format('Sending mattermost: %s', readableMap(mattermostResponseData))
+        if (verboseLevel == 2) println String.format('Sending mattermost: %s', readableMap(mattermostResponseData))
     } else {
         println 'Sending mattermost: Error, no http response.'
     }
@@ -418,9 +416,9 @@ String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword,
 /**
  * Read all files content from the directory into map.
  *
- * @param path - path to read all files,
- * @param namePrefix - name prefix which will be added to map names,
- * @param namePostfix - name postfix which will be added to map postfix,
+ * @param path - path to read all files.
+ * @param namePrefix - name prefix which will be added to map names.
+ * @param namePostfix - name postfix which will be added to map postfix.
  * @return - map with files content.
  */
 Map readFilesToMap(String path, String namePrefix, String namePostfix) {
@@ -431,8 +429,7 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
             if (fileList) {
                 fileList.each {
                     String index = it
-                    if (it.find('.'))
-                        index = it.substring(0, it.lastIndexOf('.'))
+                    if (it.find('.')) index = it.substring(0, it.lastIndexOf('.'))
                     String fileContent = readFile(it).trim()
                     fileToMapResults[namePrefix + index.replaceAll('[.-]', '_') + namePostfix] = fileContent
                 }
@@ -448,10 +445,10 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
 /**
  * Read all files content from the directory and sub-directories into a map.
  *
- * @param path - path to read all files in subdirectories,
- * @param namePrefix - name prefix which will be added to map names,
- * @param namePostfix - name postfix which will be added to map postfix,
- * @param excludeRegexp - regexp to exclude folders,
+ * @param path - path to read all files in subdirectories.
+ * @param namePrefix - name prefix which will be added to map names.
+ * @param namePostfix - name postfix which will be added to map postfix.
+ * @param excludeRegexp - regexp to exclude folders.
  * @return - map with files content.
  */
 Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, String excludeRegexp) {
@@ -466,8 +463,7 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
                 dirList.findAll { !it.matches(excludeRegexp) }.each {
                     Map folderContent = readFilesToMap(it.toString(), String.format('%s%s_', namePrefix, it),
                             namePostfix)
-                    if (folderContent)
-                        folderToMapResults += folderContent
+                    if (folderContent) folderToMapResults += folderContent
                 }
         }
     } catch (Exception err) {
@@ -493,10 +489,9 @@ static ArrayList getVariablesFromRegressionConfigMap(String text) {
  * from bindingValues. If there is no suitable value this item will be replaced with noDataBindingString (or skip if
  * noDataBindingString is null).
  *
- * (currentSingleRegressionParams, singleRegressionResultsMap, EmptyRegressionResultsReplacement)
  * @param params - current single regression params to be replaced. Every $variable will be replaced here.
  * @param bindingValues - single regression binding map (taken from file artifacts). Actually this is a map of
- *                   $variables to replace with.
+ *                        $variables to replace with.
  * @param noDataBindingString - replacement string for no binding result. Skipping replacement when null.
  * @return - regression messages map to send.
  */
@@ -551,7 +546,8 @@ Boolean saveMapToPropertiesFile(String path, Map values) {
 
 /**
  * Check defined variables.
- * Check variables is not empty (for current job)
+ * Check pipeline variables for current job are not empty. Stop with return code 1 or just print when one or more
+ * variables wasn't defined.
  *
  * @param variableList - list of variable names to check.
  * @param variableValueList - list of variable values to check.
@@ -592,7 +588,7 @@ static getFilenameExtension(String filenameWithExtension) {
  */
 Boolean extractArchive(String filenameWithExtension) {
     def (String filename, String extension) = getFilenameExtension(filenameWithExtension)
-    outMsg(1, String.format('INFO | Got filename: %s, extension: %s', filename, extension))
+    outMsg(1, String.format('Got filename: %s, extension: %s', filename, extension))
     String extractScript = String.format('tar -xvf %s', filenameWithExtension)
     if (extension == 'zip')
         extractScript = String.format('unzip %s', filenameWithExtension)
@@ -718,18 +714,18 @@ def cleanSshHostsFingerprints(List hostsToClean) {
  * @param dryRun - dry run mode enabled.
  * @param runJobWithDryRunParam - run job or pipeline with additional enabled DRY_RUN parameter.
  * @param propagateErrors - propagate job or pipeline errors.
- * @param waitFor - wait for completion.
+ * @param waitForComplete - wait for completion.
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
 def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
-                     Boolean propagateErrors = true, Boolean waitFor = true) {
+                     Boolean propagateErrors = true, Boolean waitForComplete = true) {
     if (runJobWithDryRunParam)
         jobParams += [booleanParam(name: 'DRY_RUN', value: env.DRY_RUN.toBoolean())]
     if (dryRun)
         outMsg(2, String.format('Dry-run mode. Run \'%s\': %s. Job/pipeline parameters: \n%s', jobName,
                 runJobWithDryRunParam, readableJobParams(jobParams)))
     if (!dryRun || runJobWithDryRunParam) {
-        return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitFor)
+        return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
     } else {
         outMsg(2, String.format('Dry-run mode. Running \'%s\' was skipped (runJobWithDryRunParam=%s), no job results' +
                 ' available.', jobName, runJobWithDryRunParam))
@@ -789,12 +785,13 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @param sshPassword - user password for ssh connection.
  * @param sshHostUp - wait ssh host up when true, or down when false.
  * @param timeOut - timeout (minutes).
+ * @param jenkinsHomeFolder - jenkins home folder path.
  * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
-                      Integer timeOut = 1) {
+                    Integer timeOut = 1, String jenkinsHomeFolder = '/var/lib/jenkins') {
     try {
-        sh String.format("ssh-keygen -f '/var/lib/jenkins/.ssh/known_hosts' -R %s", sshHostname)
+        sh String.format("ssh-keygen -f '%s/.ssh/known_hosts' -R %s", jenkinsHomeFolder, sshHostname)
         timeout(timeOut) {
             waitUntil {
                 script {
@@ -864,8 +861,7 @@ ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false)
             it.node.selfLabel.name }
     ArrayList nodes = []
     jenkinsComputers.each {
-        if (it.node.labelString.contains(filterMask))
-            nodes.add(it.node.selfLabel.name)
+        if (it.node.labelString.contains(filterMask)) nodes.add(it.node.selfLabel.name)
     }
     return nodes
 }
