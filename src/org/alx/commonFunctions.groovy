@@ -34,14 +34,14 @@ GitCredentialsID = '********' as String
 
 
 /**
- * Add current step (or phase) state to state map and (optional) save steps states with URLs to log file
+ * Add current step (or phase) state to state map and (optional) save steps states with URLs to log file.
  *
- * @param states - map with pipeline steps (or phases) names and states
- * @param name -  name of the current step (or phase)
- * @param state - current state: false|true
- * @param jobUrl - url of the last job run
- * @param logName - path and name of the logfile to save (leave them blank to skip saving)
- * @return - map with pipeline steps (or phases) names and states including current step (or phase) state
+ * @param states - map with pipeline steps (or phases) names and states.
+ * @param name -  name of the current step (or phase).
+ * @param state - current state: false|true.
+ * @param jobUrl - url of the last job run.
+ * @param logName - path and name of the logfile to save (leave them blank to skip saving).
+ * @return - map with pipeline steps (or phases) names and states including current step (or phase) state.
  */
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
     Integer eventNumber = 0
@@ -67,8 +67,8 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
 /**
  * Make jenkins job/pipeline parameters human readable.
  *
- * @param params - list of job/pipeline params
- * @return - string of human readable params list
+ * @param params - list of job/pipeline params.
+ * @return - string of human readable params list.
  */
 static String readableJobParams(List params) {
     return params.toString().replaceAll('\\[', '[\n\t').replaceAll(']', '\n]')
@@ -78,9 +78,9 @@ static String readableJobParams(List params) {
 /**
  * Convert map to jenkins job params.
  *
- * @param config - regression config input
- * @param checkName - check name item exists in map, otherwise ignore
- * @return - jenkins job params
+ * @param config - regression config input.
+ * @param checkName - check name item exists in map, otherwise ignore.
+ * @return - jenkins job params.
  */
 ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     String configName
@@ -124,7 +124,7 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
 /**
  * More readable exceptions with line numbers.
  *
- * @param error - Exception error
+ * @param error - Exception error.
  */
 static String readableError(Throwable error) {
     return String.format('Line %s: %s', error.stackTrace.head().lineNumber, StackTraceUtils.sanitize(error))
@@ -133,9 +133,9 @@ static String readableError(Throwable error) {
 /**
  * Parse map item and return them as arraylist for jenkins pipeline job param.
  *
- * @param key - item key name
- * @param value - item key value
- * @return - an item of array list for jenkins pipeline job param
+ * @param key - item key name.
+ * @param value - item key value.
+ * @return - an item of array list for jenkins pipeline job param.
  */
 ArrayList itemKeyToJobParam(String key, def value) {
     ArrayList param = []
@@ -153,9 +153,9 @@ ArrayList itemKeyToJobParam(String key, def value) {
 /**
  * Convert map of jenkins pipeline params to arrayList which is required to path into.
  *
- * @param mapConfig - Map with the whole pipeline params
+ * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
- *           build job: 'job_name', parameters: this_params
+ *           build job: 'job_name', parameters: this_params.
  */
 ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
     ArrayList jobParams = []
@@ -163,7 +163,7 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
         String paramPrefix = ''
         if (it.value instanceof Map) {
             paramPrefix = it.key.toString()
-            it.value.each { k, v -> jobParams += itemKeyToJobParam(paramPrefix + '_' + k, v) }
+            it.value.each { k, v -> jobParams += itemKeyToJobParam(String.format('%s_%s', paramPrefix, k), v) }
         } else {
             jobParams += itemKeyToJobParam(it.key.toString(), it.value)
         }
@@ -175,7 +175,7 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
  * Print event-type and message.
  *
  * @param eventNumber - event type: debug, info, etc...
- * @param text - text to output
+ * @param text - text to output.
  */
 def outMsg(Integer eventNumber, String text) {
     wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
@@ -243,14 +243,14 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
  *
  * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
  * @param text - text,
- * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable
- * @return - true when http OK 200
+ * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
+ * @return - true when http OK 200.
  */
 Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verboseLevel = 1) {
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
-    println mattermostResponseData
+    if (verboseLevel > 0) println mattermostResponseData
     if (mattermostResponseData) {
         if (verboseLevel == 2)
             println String.format('Sending mattermost: %s', readableMap(mattermostResponseData))
@@ -273,8 +273,8 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
  *
  * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
  * @param text - text,
- * @param verboseMsg - level of verbosity, 2 - debug, 1 - normal, 0 - disable
- * @return - true when http OK 200
+ * @param verboseMsg - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
+ * @return - true when http OK 200.
  */
 Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
     Boolean overallSendMessageState = true
@@ -312,10 +312,10 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
 }
 
 /**
- * Password generator
+ * Password generator.
  *
- * @param passwordLength - number of symbols to be generated
- * @return - password
+ * @param passwordLength - number of symbols to be generated.
+ * @return - password.
  */
 static String passwordGenerator(Integer passwordLength) {
     String charset = (('A'..'Z') + ('a'..'z') + ('0'..'9') + ('+-*#$@!=%') - ('0O1Il')).join('')
@@ -323,21 +323,20 @@ static String passwordGenerator(Integer passwordLength) {
 }
 
 /**
- * More readable Map output
+ * More readable Map output.
  *
- * @param content - map content
- * @return - string of human readable map
+ * @param content - map content.
+ * @return - string of human readable map.
  */
 static String readableMap(Map content) {
     return (new JsonBuilder(content).toPrettyString())
 }
 
 /**
- * Transform json String input into a serializable HashMap
- * https://gist.github.com/mig82/a647272ce2bc07610a5eff6967442dd8
+ * Transform json String input into a serializable HashMap.
  *
- * @param txt - json text input
- * @return - serializable HashMap
+ * @param txt - json text input.
+ * @return - serializable HashMap.
  */
 @NonCPS
 static Map parseJson(String txt) {
@@ -351,8 +350,8 @@ static Map parseJson(String txt) {
 /**
  * Transliterate string from cyrillic to latin.
  *
- * @param inputText - text to transliterate
- * @return - transliterated text
+ * @param inputText - text to transliterate.
+ * @return - transliterated text.
  */
 String transliterateString(String inputText) {
     return (sh(returnStdout: true, script: String.format('''python3 -c "import sys; from transliterate import ''' +
@@ -363,10 +362,10 @@ String transliterateString(String inputText) {
 /**
  * Transform yaml ArrayList input into a LazyMap
  * (if you parse yaml list like it's in ansible and get from readYaml an array list you'll need to use this function,
- * otherwise use readYaml to get Map directly)
+ * otherwise use readYaml to get Map directly).
  *
- * @param yaml - yaml ArrayList input
- * @return - LazyMap
+ * @param yaml - yaml ArrayList input.
+ * @return - LazyMap.
  */
 static Map yamlToLazyMap(def yaml) {
     return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '')
@@ -377,7 +376,7 @@ static Map yamlToLazyMap(def yaml) {
  * Flatten nested map.
  *
  * @param sourceMap - source map,
- * @return - flatten map
+ * @return - flatten map.
  */
 static flattenNestedMap(Map sourceMap) {
     Map resultMap = [:]
@@ -397,13 +396,13 @@ static flattenNestedMap(Map sourceMap) {
 /**
  * Run bash command via ssh on remote host.
  *
- * @param sshHostname - ssh host to connect via ssh
- * @param sshUsername - ssh user
- * @param sshPassword - ssh password
- * @param returnStatus - return 'bash return code' when true
- * @param returnStdout - return 'bash stdout' when true
- * @param sshCommand - command to execute
- * @return - bash return code in string format or bash stdout (see returnStatus)
+ * @param sshHostname - ssh host to connect via ssh.
+ * @param sshUsername - ssh user.
+ * @param sshPassword - ssh password.
+ * @param returnStatus - return 'bash return code' when true.
+ * @param returnStdout - return 'bash stdout' when true.
+ * @param sshCommand - command to execute.
+ * @return - bash return code in string format or bash stdout (see returnStatus).
  */
 String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword, Boolean returnStatus,
                      Boolean returnStdout, String sshCommand) {
@@ -520,7 +519,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
             }
         }
     }
-    outMsg(0, bindingLogMessage + '\n\n')
+    outMsg(0, String.format('%s\n\n', bindingLogMessage))
     String templatedLogMessage = 'replaceVariablesInMapItemsWithValues | templated:\n'
     messageMap.each {
         String templatedValue = new StreamingTemplateEngine().createTemplate(it.value.toString()).make(resultsBinding)
@@ -528,7 +527,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
         messageMap[it.key] = templatedValue
         templatedLogMessage += String.format('\'%s\': %s\n', messageMap[it.key], templatedValue)
     }
-    outMsg(0, templatedLogMessage + '\n\n')
+    outMsg(0, String.format('%s\n\n', templatedLogMessage))
     return messageMap
 }
 
@@ -537,11 +536,11 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
  *
  * @param path - path and filename for properties file,
  * @param values - map with values to save.
- * @return - true when ok
+ * @return - true when ok.
  */
 Boolean saveMapToPropertiesFile(String path, Map values) {
     try {
-        writeFile(file: path, text: values.collect {it.key + "=" + it.value}.join('\n'))
+        writeFile(file: path, text: values.collect {String.format("%s=%s", it.key, it.value) }.join('\n'))
         return true
     } catch (Exception err) {
         outMsg(3, String.format('Unable to save \'%s\' with values: \n%s\nbecause of:\n%s', path,
@@ -554,10 +553,10 @@ Boolean saveMapToPropertiesFile(String path, Map values) {
  * Check defined variables.
  * Check variables is not empty (for current job)
  *
- * @param variableList - list of variable names to check
- * @param variableValueList - list of variable values to check
+ * @param variableList - list of variable names to check.
+ * @param variableValueList - list of variable values to check.
  * @param stopOnError - true: terminate job on error, false: just output an error.
- * @return - true when missing variable
+ * @return - true when missing variable.
  */
 Boolean checkRequiredVariables(List variableList, List variableValueList, Boolean stopOnError) {
     Boolean errorsFound = false
@@ -577,8 +576,8 @@ Boolean checkRequiredVariables(List variableList, List variableValueList, Boolea
 /**
  * Get filename and extension separately.
  *
- * @param filenameWithExtension - file name with extension
- * @return - list with filename and extension
+ * @param filenameWithExtension - file name with extension.
+ * @return - list with filename and extension.
  */
 @NonCPS
 static getFilenameExtension(String filenameWithExtension) {
@@ -588,8 +587,8 @@ static getFilenameExtension(String filenameWithExtension) {
 /**
  * Detect archive type (tar.xx or zip) and extract.
  *
- * @param filenameWithExtension - file name with extension
- * @return - true when success
+ * @param filenameWithExtension - file name with extension.
+ * @return - true when success.
  */
 Boolean extractArchive(String filenameWithExtension) {
     def (String filename, String extension) = getFilenameExtension(filenameWithExtension)
@@ -699,7 +698,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
 /**
  * Clean SSH hosts fingerprints from ~/.ssh/known_hosts.
  *
- * @param hostsToClean - IP List to clean
+ * @param hostsToClean - IP List to clean.
  */
 def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
@@ -714,13 +713,13 @@ def cleanSshHostsFingerprints(List hostsToClean) {
 /**
  * Handle jenkins downstream jobs in dry-run mode.
  *
- * @param jobName - job or jenkins pipeline name
- * @param jobParams - job or pipeline parameters
- * @param dryRun - dry run mode enabled
- * @param runJobWithDryRunParam - run job or pipeline with additional enabled DRY_RUN parameter
- * @param propagateErrors - propagate job or pipeline errors
- * @param waitFor - wait for completion
- * @return - run wrapper of current job or pipeline build, or null for skipped run
+ * @param jobName - job or jenkins pipeline name.
+ * @param jobParams - job or pipeline parameters.
+ * @param dryRun - dry run mode enabled.
+ * @param runJobWithDryRunParam - run job or pipeline with additional enabled DRY_RUN parameter.
+ * @param propagateErrors - propagate job or pipeline errors.
+ * @param waitFor - wait for completion.
+ * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
 def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitFor = true) {
@@ -741,8 +740,8 @@ def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolea
 
 /** Serialize environment variables into map
  *
- * @param envVars - environment variables
- * @return - map with environment variables
+ * @param envVars - environment variables.
+ * @return - map with environment variables.
  */
 static envVarsToMap(envVars) {
     Map envVarsMap = [:]
@@ -753,9 +752,9 @@ static envVarsToMap(envVars) {
 /**
  * Rename Map key names with regex.
  *
- * @param sourceMap - source map
- * @param regex - regex string
- * @return - result map
+ * @param sourceMap - source map.
+ * @param regex - regex string.
+ * @return - result map.
  */
 static regexMapKeyNames(Map sourceMap, String regex) {
     Map resultMap = [:]
@@ -766,8 +765,8 @@ static regexMapKeyNames(Map sourceMap, String regex) {
 /** Fix data typing of map values.
  * (If source map is string with 'true', 'false', '1212121' etc)
  *
- * @param sourceMap - source map
- * @return - map with typed values
+ * @param sourceMap - source map.
+ * @return - map with typed values.
  */
 static fixMapValuesDataTyping(Map sourceMap) {
     Map resultMap = [:]
@@ -787,12 +786,12 @@ static fixMapValuesDataTyping(Map sourceMap) {
 /**
  * Wait ssh host up/down.
  *
- * @param sshHostname - ssh hostname or IP
- * @param sshUsername - username for ssh connection
- * @param sshPassword - user password for ssh connection
- * @param sshHostUp - wait ssh host up when true, or down when false
- * @param timeOut - timeout (minutes)
- * @return - true when success
+ * @param sshHostname - ssh hostname or IP.
+ * @param sshUsername - username for ssh connection.
+ * @param sshPassword - user password for ssh connection.
+ * @param sshHostUp - wait ssh host up when true, or down when false.
+ * @param timeOut - timeout (minutes).
+ * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
                       Integer timeOut = 1) {
@@ -818,15 +817,15 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
 /**
  * Run scp (copy via ssh).
  *
- * @param sshHostname - ssh host to connect via ssh
- * @param sshUsername - ssh user
- * @param sshPassword - ssh password
- * @param sourcePath - source path to copy from
- * @param destinationPath - destination path
- * @param returnStatus - return 'bash return code' when true
- * @param returnStdout - return 'bash stdout' when true
- * @param scpDirection - true when scp to remote, false when scp from remote
- * @return - bash return code in string format or bash stdout (see returnStatus)
+ * @param sshHostname - ssh host to connect via ssh.
+ * @param sshUsername - ssh user.
+ * @param sshPassword - ssh password.
+ * @param sourcePath - source path to copy from.
+ * @param destinationPath - destination path.
+ * @param returnStatus - return 'bash return code' when true.
+ * @param returnStdout - return 'bash stdout' when true.
+ * @param scpDirection - true when scp to remote, false when scp from remote.
+ * @return - bash return code in string format or bash stdout (see returnStatus).
  */
 String runBashScp(String sshHostname, String sshUsername, String sshPassword, String sourcePath,
                   String destinationPath, Boolean returnStatus = true, Boolean returnStdout = false,
@@ -846,7 +845,7 @@ String runBashScp(String sshHostname, String sshUsername, String sshPassword, St
  *
  * @param sleepSeconds - sleep seconds to wait finishing up.
  */
-def interruptPipelineOk(Integer sleepSeconds=2) {
+def interruptPipelineOk(Integer sleepSeconds = 2) {
     currentBuild.build().getExecutor().interrupt(Result.SUCCESS)
     sleep(time: sleepSeconds, unit: "SECONDS")
 }
@@ -854,9 +853,9 @@ def interruptPipelineOk(Integer sleepSeconds=2) {
 /**
  * Get all jenkins nodes and filter them by label mask or name mask.
  *
- * @param filterMask - string that should be contained for include to results
- * @param filterByLabel - when true filter by node label, otherwise filter by node name
- * @return - list of nodes
+ * @param filterMask - string that should be contained for include to results.
+ * @param filterByLabel - when true filter by node label, otherwise filter by node name.
+ * @return - list of nodes.
  */
 ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false) {
     Object jenkinsComputers = jenkins.model.Jenkins.get().computers
@@ -879,8 +878,8 @@ ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false)
  * @param optionsMap - Map with item status and description, e.g:
  *                     [option_1: [state: true, description: 'text_1'],
  *                     option_2: [state: false, description: 'text_2']]
- * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description)
- * @return - list of [enabled options list, descriptions of enabled options list]
+ * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
+ * @return - list of [enabled options list, descriptions of enabled options list].
  */
 static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
     ArrayList options = []
@@ -898,9 +897,9 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
 /**
  * Grep only filed states from stages status list in string format.
  *
- * @param states - map including key with these states steps
- * @param inputKeyName - key name in this map to get failed states from
- * @return - string of failed states list
+ * @param states - map including key with these states steps.
+ * @param inputKeyName - key name in this map to get failed states from.
+ * @return - string of failed states list.
  */
 @NonCPS
 static String grepFailedStates(Map states, String inputKeyName) {
