@@ -30,7 +30,7 @@ import hudson.model.Result
 
 
 // Set your Git Credentials ID to clone projects from, e.g. ansible
-GitCredentialsID = '********' as String
+def GitCredentialsID = '********' as String
 
 
 /**
