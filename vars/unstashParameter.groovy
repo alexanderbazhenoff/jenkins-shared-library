@@ -10,7 +10,7 @@ import hudson.model.Executor
  * It provides a unstashParameter that saves file parameter to a workspace.
  *
  * @param name - parameter name,
- * @param fname - (pptional) input filename.
+ * @param fname - (optional) input filename.
  * @return - stashed filename.
  */
 def call(String name, String fname = null) {
