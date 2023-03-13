@@ -7,7 +7,7 @@ import hudson.model.Executor
  * Unstash file parameter from jenkins pipeline.
  *
  * This pipeline library contains a workaround for Jenkins issue: https://issues.jenkins-ci.org/browse/JENKINS-27413
- * It provides a new step unstashParameter that saves file parameter to a workspace.
+ * It provides a unstashParameter that saves file parameter to a workspace.
  *
  * @param name - parameter name,
  * @param fname - (pptional) input filename.
