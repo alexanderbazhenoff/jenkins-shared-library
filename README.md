@@ -25,6 +25,8 @@ node('master') {
 }
 ```
 
+To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable.
+
 #### To use library from [`vars`](vars):
 
 ```groovy
