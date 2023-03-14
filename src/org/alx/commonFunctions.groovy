@@ -44,7 +44,7 @@ def GitCredentialsID = '********' as String
  * @return - map with pipeline steps (or phases) names and states including current step (or phase) state.
  */
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
-    Integer eventNumber = (!state) ? 3 : 0
+    Integer eventNumber = !state ? 3 : 0
     if (!jobUrl?.trim()) jobUrl = ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
     if (logName?.trim()) {
@@ -177,8 +177,7 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
  * @param text - text to output.
  */
 def outMsg(Integer eventNumber, String text) {
-    wrap([$class: 'AnsiColorBuildWrapper', 'col' +
-                                                   'orMapName': 'xterm']) {
+    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
         ArrayList eventTypes = [
                 '\033[0;34mDEBUG\033[0m',
                 '\033[0;32mINFO\033[0m',
@@ -257,8 +256,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
         println 'Sending mattermost: Error, no http response.'
     }
     if (mattermostResponse.get('response_status_line')) {
-        if (verboseLevel >= 1)
-            println String.format('Sending mattermost: %s', mattermostResponse.response_status_line)
+        if (verboseLevel >= 1) println String.format('Sending mattermost: %s', mattermostResponse.response_status_line)
         return (mattermostResponse['response_status_line'].toString().contains('200 OK'))
     } else {
         println String.format('Sending mattermost: %s', (mattermostResponse.get('response_content') ?
@@ -273,11 +271,12 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
  * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
  * @param text - text,
  * @param verboseMsg - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
+ * @param messageLength - length of sing mattermost message possible to send.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
+Boolean sendMattermostChannel(String url, String text, Integer verboseMsg, Integer messageLength = 4000) {
     Boolean overallSendMessageState = true
-    if (text.length() >= 4000) {
+    if (text.length() >= messageLength) {
         ArrayList splitMessages = []
         List splitByEnterMessage = text.tokenize('\n').toList()
         Integer messageIndex = 0
@@ -286,8 +285,8 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg) {
         for (Integer i = 0; i < splitByEnterMessage.size(); i++) {
             if (splitByEnterMessage[i].find('```'))
                 codeBlockMarkersCounter++
-            String tempMessageString = splitMessages[messageIndex] + '\n' + splitByEnterMessage[i]
-            if (tempMessageString.size() <= 3996) {
+            String tempMessageString = String.format('%s\n%s', splitMessages[messageIndex], splitByEnterMessage[i])
+            if (tempMessageString.size() <= messageLength - 4) {
                 splitMessages[messageIndex] = tempMessageString
             } else {
                 if (codeBlockMarkersCounter % 2 == 0) {
@@ -349,13 +348,12 @@ static Map parseJson(String txt) {
 /**
  * Transliterate string from cyrillic to latin.
  *
- * @param inputText - text to transliterate.
+ * @param text - text to transliterate.
  * @return - transliterated text.
  */
-String transliterateString(String inputText) {
+String transliterateString(String text) {
     return (sh(returnStdout: true, script: String.format('''python3 -c "import sys; from transliterate import ''' +
-            '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', inputText))
-            .trim())
+            '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim())
 }
 
 /**
@@ -563,10 +561,8 @@ Boolean checkRequiredVariables(List variableList, List variableValueList, Boolea
             outMsg(3, String.format("%s is undefined for current job run", variableList[i]))
         }
     }
-    if (errorsFound.toBoolean() && stopOnError.toBoolean()) {
-        outMsg(3, 'Current job run terminated. Please specify the parameters listed above and run again.')
-        sh 'exit 1'
-    }
+    if (errorsFound.toBoolean() && stopOnError.toBoolean())
+        error 'Current job run terminated. Please specify the parameters listed above and run again.'
     return errorsFound
 }
 
@@ -591,8 +587,7 @@ Boolean extractArchive(String filenameWithExtension) {
     def (String filename, String extension) = getFilenameExtension(filenameWithExtension)
     outMsg(1, String.format('Got filename: %s, extension: %s', filename, extension))
     String extractScript = String.format('tar -xvf %s', filenameWithExtension)
-    if (extension == 'zip')
-        extractScript = String.format('unzip %s', filenameWithExtension)
+    if (extension == 'zip') extractScript = String.format('unzip %s', filenameWithExtension)
     return (sh(returnStdout: true, returnStatus: true, script: extractScript) == 0)
 }
 
@@ -662,8 +657,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             if (ansibleGitlabUrl.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitlabUrl,
                         ansibleGitlabBranch, ansibleCollections, cleanupBeforeAnsibleClone, gitCredentialsId)
-                if (!runAnsibleState)
-                    return false
+                if (!runAnsibleState) return false
             }
             ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
         } else {
@@ -823,9 +817,8 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
  * @param scpDirection - true when scp to remote, false when scp from remote.
  * @return - bash return code in string format or bash stdout (see returnStatus).
  */
-String runBashScp(String sshHostname, String sshUsername, String sshPassword, String sourcePath,
-                  String destinationPath, Boolean returnStatus = true, Boolean returnStdout = false,
-                  Boolean scpDirection = true) {
+String runBashScp(String sshHostname, String sshUsername, String sshPassword, String sourcePath, String destinationPath,
+                  Boolean returnStatus = true, Boolean returnStdout = false, Boolean scpDirection = true) {
     writeFile file: 'pass.txt', text: sshPassword
     String scpPathArgs = String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
     if (scpDirection)
