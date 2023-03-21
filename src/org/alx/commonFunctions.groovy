@@ -105,14 +105,14 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
                 outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
                         readableJobParams(jobParams)))
             } else if (config.enabled && !config.jobname?.trim()) {
-                outMsg(2, String.format('Unable to perform regression testing for %s config because ' +
-                        'jobname in this config wasn\'t set. Skipping testing this config.', configName))
+                outMsg(2, String.format('%s %s %s', 'Unable to perform regression testing for',
+                        configName, 'jobname in this config wasn\'t set. Skipping testing this config.'))
             } else if (!config.enabled) {
                 outMsg(1, String.format('%s config disabled, skipping.', configName))
             }
         } else {
-            outMsg(3, String.format( 'Unable to find \'enabled\' and/or \'jobname\' param(s) in %s ' +
-                    'config. Please check and try again. Config was skipped.', configName))
+            outMsg(3, String.format('%s %s %s', "Unable to find 'enabled' and/or 'jobname' param(s) in",
+                    configName, 'config. Please check and try again. Config was skipped.'))
         }
     } catch (Exception err) {
         outMsg(3, String.format('Converting yaml config to jenkins job params error: %s', readableError(err)))
@@ -226,7 +226,6 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
         status.response_status_line = response.getStatusLine()
         if (resEntity != null) {
             status.content_length = resEntity.getContentLength()
-            // debug
             status.response_is_chunked = resEntity.isChunked()
             status.response_content_encoding = resEntity.contentEncoding
             status.response_content = resEntity.content.text
@@ -404,11 +403,10 @@ static flattenNestedMap(Map sourceMap) {
 String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword, Boolean returnStatus,
                      Boolean returnStdout, String sshCommand) {
     writeFile file: 'pass.txt', text: sshPassword
-    String bashResulting = sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s " +
-            "'%s'", sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout)
-            .toString()
+    String bashResult = sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s '%s'",
+            sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout).toString()
     sh 'rm -f pass.txt'
-    return bashResulting
+    return bashResult
 }
 
 
@@ -430,7 +428,8 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
                     String index = it
                     if (it.find('.')) index = it.substring(0, it.lastIndexOf('.'))
                     String fileContent = readFile(it).trim()
-                    fileToMapResults[namePrefix + index.replaceAll('[.-]', '_') + namePostfix] = fileContent
+                    fileToMapResults[String.format('%s%s%s', namePrefix,
+                            index.replaceAll('[.-]', '_'), namePostfix)] = fileContent
                 }
             }
         }
@@ -722,8 +721,8 @@ def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolea
     if (!dryRun || runJobWithDryRunParam) {
         return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
     } else {
-        outMsg(2, String.format('Dry-run mode. Running \'%s\' was skipped (runJobWithDryRunParam=%s), no job results' +
-                ' available.', jobName, runJobWithDryRunParam))
+        outMsg(2, String.format("%s '%s' %s%s), no job results.", 'Dry-run mode. Running', jobName,
+                'was skipped (runJobWithDryRunParam=', runJobWithDryRunParam))
         return null
     }
 }
