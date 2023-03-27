@@ -591,34 +591,47 @@ Boolean extractArchive(String filenameWithExtension) {
 }
 
 /**
+ * Clone GitLab or GitHub project into a directory.
+ *
+ * @param projectGitUrl - Git URL of the project to clone.
+ * @param projectGitBranch - Git branch of the project.
+ * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
+ * @param gitCredentialsId - Git credentials ID
+ */
+def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
+                        String gitCredentialsId = GitCredentialsID) {
+    dir(projectLocalPath) {
+        git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
+    }
+}
+
+/**
  * Install list of ansible-galaxy collections.
  *
- * @param ansibleGitlabUrl - Git URL of ansible project. Leave empty if your ansible collection already cloned to
- *                           ./ansible folder.
- * @param ansibleGitlabBranch - Git branch of ansible project to clone.
+ * @param ansibleGitUrl - Git URL of ansible project. Leave empty if your ansible collection already cloned to ./ansible
+ *                        folder.
+ * @param ansibleGitBranch - Git branch of ansible project to clone.
  * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible clone.
  * @param gitCredentialsId - CredentialsID for git authorisation on ansible project clone.
  * @param ansibleCollections - List of ansible-galaxy collections to install, e.g: 'namespace.collection_name' that
  *                             should be placed inside 'ansible_collections' folder as ansible-galaxy standards.
  * @return - true when success.
  */
-Boolean installAnsibleGalaxyCollections(String ansibleGitlabUrl, String ansibleGitlabBranch, List ansibleCollections,
+Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
     if (cleanupBeforeAnsibleClone) sh 'sudo rm -rf *'
-    dir('ansible') {
-        if (ansibleGitlabUrl.trim())
-            git(branch: ansibleGitlabBranch, credentialsId: gitCredentialsId, url: ansibleGitlabUrl)
-        ansibleCollections.each {
-            dir(String.format('ansible_collections/%s', it.replace('.', '/'))) {
-                ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
-                        script: String.format('''ansible-galaxy collection build 
-                                ansible-galaxy collection install $(ls -1 | grep "%s" | grep ".tar.gz") -f''',
-                                it.replace('.', '-'))) != 0) ? false : ansibleGalaxyInstallOk
-                if (!ansibleGalaxyInstallOk)
-                    outMsg(3, String.format('There was an error building and installing %s ansible collection.', it))
-            }
+    if (ansibleGitUrl.trim())
+        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId)
+    ansibleCollections.each {
+        dir(String.format('ansible/ansible_collections/%s', it.replace('.', '/'))) {
+            ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
+                    script: String.format('''ansible-galaxy collection build 
+                            ansible-galaxy collection install $(ls -1 | grep "%s" | grep ".tar.gz") -f''',
+                            it.replace('.', '-'))) != 0) ? false : ansibleGalaxyInstallOk
+            if (!ansibleGalaxyInstallOk)
+                outMsg(3, String.format('There was an error building and installing %s ansible collection.', it))
         }
     }
     return ansibleGalaxyInstallOk
@@ -629,9 +642,9 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitlabUrl, String ansibleG
  *
  * @param ansiblePlaybookText - text content of ansible playbook/role.
  * @param ansibleInventoryText - text content of ansible inventory file.
- * @param ansibleGitlabUrl - gitlab URL of ansible project to clone and run. Leave empty for ansible collection mode,
+ * @param ansibleGitUrl - Git URL of ansible project to clone and run. Leave empty for ansible collection mode,
  *                           but skip collection cloning and install.
- * @param ansibleGitlabBranch - gitlab branch of ansible project.
+ * @param ansibleGitBranch - gitlab branch of ansible project.
  * @param ansibleExtras - (optional) extra params for playbook running.
  * @param ansibleCollections - (optional) list of ansible-galaxy collections dependencies which will be installed before
  *                             running the script. Collections should be placed in ansible gitlab project according to
@@ -644,8 +657,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitlabUrl, String ansibleG
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
  * @return - success (true when ok)
  */
-Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitlabUrl,
-                   String ansibleGitlabBranch, String ansibleExtras = '', List ansibleCollections = [],
+Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
+                   String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
                    String gitCredentialsId = GitCredentialsID) {
     Boolean runAnsibleState = false
@@ -653,9 +666,9 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         String ansibleMode = 'ansible'
         String ansibleTempPlaybookPathPrefix = ''
         if (ansibleCollections) {
-            if (ansibleGitlabUrl.trim()) {
-                runAnsibleState = installAnsibleGalaxyCollections(ansibleGitlabUrl,
-                        ansibleGitlabBranch, ansibleCollections, cleanupBeforeAnsibleClone, gitCredentialsId)
+            if (ansibleGitUrl.trim()) {
+                runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
+                        cleanupBeforeAnsibleClone, gitCredentialsId)
                 if (!runAnsibleState) return false
             }
             ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
