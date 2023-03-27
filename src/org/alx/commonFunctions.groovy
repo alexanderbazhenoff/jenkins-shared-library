@@ -364,8 +364,7 @@ String transliterateString(String text) {
  * @return - LazyMap.
  */
 static Map yamlToLazyMap(def yaml) {
-    return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '')
-            .stripIndent())
+    return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
 }
 
 /**
