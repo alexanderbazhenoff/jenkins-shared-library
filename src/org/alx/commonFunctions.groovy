@@ -323,7 +323,7 @@ static String passwordGenerator(Integer passwordLength) {
  * More readable Map output.
  *
  * @param content - map content.
- * @return - string of human readable map.
+ * @return - human-readable string of map.
  */
 static String readableMap(Map content) {
     return (new JsonBuilder(content).toPrettyString())
