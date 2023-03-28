@@ -28,9 +28,10 @@ import org.apache.commons.io.FilenameUtils
 
 import hudson.model.Result
 
-
-// Set your Git Credentials ID to clone projects from, e.g. ansible
-def GitCredentialsID = '********' as String
+class OrgAlxGlobals {
+    // Set your Git credentials ID for git authorisation
+    static String GitCredentialsID = '********'
+}
 
 
 /**
@@ -595,10 +596,11 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param projectGitUrl - Git URL of the project to clone.
  * @param projectGitBranch - Git branch of the project.
  * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
- * @param gitCredentialsId - Git credentials ID
+ * @param gitCredentialsId - Git credentials ID for git authorisation on ansible project clone (something like
+ *                           'a123b01c-456d-7890-ef01-2a34567890b1')
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = GitCredentialsID) {
+                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     dir(projectLocalPath) {
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
@@ -618,7 +620,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  */
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
-                                        String gitCredentialsId = GitCredentialsID) {
+                                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
     if (cleanupBeforeAnsibleClone) sh 'sudo rm -rf *'
     if (ansibleGitUrl.trim())
