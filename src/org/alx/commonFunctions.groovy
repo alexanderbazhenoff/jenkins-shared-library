@@ -28,9 +28,15 @@ import org.apache.commons.io.FilenameUtils
 
 import hudson.model.Result
 
+
+/**
+ * Global variables for org.alx package
+ */
 class OrgAlxGlobals {
-    // Set your Git credentials ID for git authorisation
-    static String GitCredentialsID = '********'
+    /**
+     * Provide Git credentials ID for git authorisation.
+     */
+    static String GitCredentialsID = ''
 }
 
 
