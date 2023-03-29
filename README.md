@@ -2,7 +2,7 @@
 
 Some common things that makes writing Jenkins pipelines easier.
 
-### Usage
+### Usage:
 
 1. Connect this repository to your Jenkins shared library as described in
 [`official documentation`](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries).
@@ -42,7 +42,10 @@ node('master') {
 ```
 
 Please also keep in mind a differences between `vars` and `src` folder organizations 
-(read [article](http://tdongsi.github.io/blog/2017/12/26/class-in-jenkins-shared-library/)).
+(read [**this article**](http://tdongsi.github.io/blog/2017/12/26/class-in-jenkins-shared-library/) for details).
 
 3. Read `Groovydoc` in the comments of file(s) (e.g:
 [`src/org/alx/commonFunctions.groovy`](src/org/alx/commonFunctions.groovy)) for details.
+4. (Optional) To use Git-related functions (e.g. `cloneGitToFolder()`, `installAnsibleGalaxyCollections()` or 
+`runAnsible()`) to clone from ssh URL you should set up **GitCredentialsID** variable in 
+[`commonFunctions.groovy`](src/org/alx/commonFunctions.groovy).

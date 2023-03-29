@@ -667,7 +667,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
                    String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
-                   String gitCredentialsId = GitCredentialsID) {
+                   String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = false
     try {
         String ansibleMode = 'ansible'
