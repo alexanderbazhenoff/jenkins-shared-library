@@ -157,7 +157,7 @@ ArrayList itemKeyToJobParam(String key, def value) {
 }
 
 /**
- * Convert map of jenkins pipeline params to arrayList which is required to path into.
+ * Convert map of jenkins pipeline params to arrayList which is required to path into on a build.
  *
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
