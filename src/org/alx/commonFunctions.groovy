@@ -157,7 +157,7 @@ ArrayList itemKeyToJobParam(String key, def value) {
 }
 
 /**
- * Convert map of jenkins pipeline params to arrayList which is required to path into on a build.
+ * Convert map of jenkins pipeline params to arrayList which is required to path to a new job build.
  *
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
@@ -178,9 +178,10 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
 }
 
 /**
- * Print event-type and message.
+ * Print colored event type, jenkins job name and message to job console.
  *
- * @param eventNumber - event type: debug, info, etc...
+ * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
+ *                      parameter is true.
  * @param text - text to output.
  */
 def outMsg(Integer eventNumber, String text) {
@@ -190,7 +191,7 @@ def outMsg(Integer eventNumber, String text) {
                 '\033[0;32mINFO\033[0m',
                 '\033[0;33mWARNING\033[0m',
                 '\033[0;31mERROR\033[0m']
-        if (eventNumber.toInteger() != 0 || env.DEBUG_MODE.toBoolean())
+        if (eventNumber.toInteger() != 0 || (params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()))
             println String.format('%s | %s | %s', env.JOB_NAME, eventTypes[eventNumber], text)
     }
 }
