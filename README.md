@@ -34,9 +34,9 @@ To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsI
 
 node('master') {
     // your pipeline code then example usage of unstashParameter:
-    String file_in_workspace = unstashParameter "SOME_JENKINS_PARAMETER_NAME"
+    String fileInWorkspace = unstashParameter "JENKINS_PIPELINE_FILE_PARAMETER_NAME"
     // Output file content
-    sh String.format('cat %s', file_in_workspace)
+    sh String.format('cat %s', fileInWorkspace)
 }
 
 ```
