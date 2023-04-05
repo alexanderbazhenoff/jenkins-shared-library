@@ -2,11 +2,11 @@ package org.alx
 
 
 /**
- * Jenkins shared library. Written by Alexander Bazhenov, 2020-2023.
+ * Jenkins shared library. Written by Alexander Bazhenov, 2021-2023.
  * Common functions to use in jenkins pipelines.
  *
  * This Source Code Form is subject to the terms of the GNU LESSER GENERAL PUBLIC LICENSE v2.1 License.
- * If a copy of the MPL was not distributed with this file, You can obtain one at:
+ * If a copy of this source file was not distributed with this file, You can obtain one at:
  * https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
  */
 
@@ -38,27 +38,27 @@ class OrgAlxGlobals {
     /**
      * Provide Git credentials ID for git authorisation.
      */
-    static String GitCredentialsID = ''
+    public static String GitCredentialsID = ''
 
     /**
      * Provide default verbose level for send message to mattermost function.
      */
-    static Integer MattermostMessageDefaultVerboseLevel = 1
+    public static Integer MattermostMessageDefaultVerboseLevel = 1
 
     /**
      * Provide default length of mattermost message.
      */
-    static Integer MattermostMessageDefaultLength = 4000
+    public static Integer MattermostMessageDefaultLength = 4000
 
     /**
      * Provide default time-out for wait ssh host up or down (in minutes).
      */
-    static Integer WaitSshHostUpDownTimeout = 1
+    public static Integer WaitSshHostUpDownTimeout = 1
 
     /**
      * Provide default path of home folder for jenkins user.
      */
-    static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+    public static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
 }
 
 
