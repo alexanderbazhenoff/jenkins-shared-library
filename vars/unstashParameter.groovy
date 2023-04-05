@@ -5,7 +5,7 @@ import hudson.model.Executor
 
 
 /**
- * This Source Code Form is subject to the terms of the GNU LESSER GENERAL PUBLIC LICENSE v2.1 License.
+ * This Source Code Form is subject to the terms of the Apache License v2.0.
  * If a copy of this source file was not distributed with this file, You can obtain one at:
  * https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
 */
