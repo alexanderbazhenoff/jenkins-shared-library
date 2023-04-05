@@ -5,10 +5,8 @@ import hudson.model.Executor
 
 
 /**
- * Jenkins shared library. Written by Alexander Bazhenov, 2020-2023.
- *
  * This Source Code Form is subject to the terms of the GNU LESSER GENERAL PUBLIC LICENSE v2.1 License.
- * If a copy of the MPL was not distributed with this file, You can obtain one at:
+ * If a copy of this source file was not distributed with this file, You can obtain one at:
  * https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
 */
 
