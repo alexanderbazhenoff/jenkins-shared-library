@@ -32,13 +32,33 @@ import hudson.model.Result
 
 
 /**
- * Global variables for org.alx package
+ * Global variables for library file CommonFunctions.groovy
  */
 class OrgAlxGlobals {
     /**
      * Provide Git credentials ID for git authorisation.
      */
     static String GitCredentialsID = ''
+
+    /**
+     * Provide default verbose level for send message to mattermost function.
+     */
+    static Integer MattermostMessageDefaultVerboseLevel = 1
+
+    /**
+     * Provide default length of mattermost message.
+     */
+    static Integer MattermostMessageDefaultLength = 4000
+
+    /**
+     * Provide default time-out for wait ssh host up or down (in minutes).
+     */
+    static Integer WaitSshHostUpDownTimeout = 1
+
+    /**
+     * Provide default path of home folder for jenkins user.
+     */
+    static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
 }
 
 
@@ -254,7 +274,8 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
  * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verboseLevel = 1) {
+Boolean sendMattermostChannelSingleMessage(String url, String text,
+                                           Integer verboseLevel = OrgAlxGlobals.MattermostMessageDefaultVerboseLevel) {
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
@@ -283,7 +304,8 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
  * @param messageLength - length of sing mattermost message possible to send.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannel(String url, String text, Integer verboseMsg, Integer messageLength = 4000) {
+Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
+                              Integer messageLength = OrgAlxGlobals.MattermostMessageDefaultLength) {
     Boolean overallSendMessageState = true
     if (text.length() >= messageLength) {
         ArrayList splitMessages = []
@@ -806,7 +828,8 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
-                    Integer timeOut = 1, String jenkinsHomeFolder = '/var/lib/jenkins') {
+                    Integer timeOut = OrgAlxGlobals.WaitSshHostUpDownTimeout,
+                    String jenkinsHomeFolder = OrgAlxGlobals.JenkinsUserDefaultHomeFolder) {
     try {
         sh String.format("ssh-keygen -f '%s/.ssh/known_hosts' -R %s", jenkinsHomeFolder, sshHostname)
         timeout(timeOut) {
