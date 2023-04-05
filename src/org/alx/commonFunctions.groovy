@@ -2,10 +2,12 @@ package org.alx
 
 
 /**
+ * Jenkins shared library. Written by Alexander Bazhenov, 2021-2023.
  * Common functions to use in jenkins pipelines.
  *
- * This Source Code Form is subject to the terms of the MIT License. If a copy of the MPL was not distributed with this
- * file, You can obtain one at: https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
+ * This Source Code Form is subject to the terms of the GNU LESSER GENERAL PUBLIC LICENSE v2.1 License.
+ * If a copy of this source file was not distributed with this file, You can obtain one at:
+ * https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
  */
 
 
@@ -29,8 +31,35 @@ import org.apache.commons.io.FilenameUtils
 import hudson.model.Result
 
 
-// Set your Git Credentials ID to clone projects from, e.g. ansible
-def GitCredentialsID = '********' as String
+/**
+ * Global variables for library file CommonFunctions.groovy
+ */
+class OrgAlxGlobals {
+    /**
+     * Provide Git credentials ID for git authorisation.
+     */
+    public static String GitCredentialsID = ''
+
+    /**
+     * Provide default verbose level for send message to mattermost function.
+     */
+    public static Integer MattermostMessageDefaultVerboseLevel = 1
+
+    /**
+     * Provide default length of mattermost message.
+     */
+    public static Integer MattermostMessageDefaultLength = 4000
+
+    /**
+     * Provide default time-out for wait ssh host up or down (in minutes).
+     */
+    public static Integer WaitSshHostUpDownTimeout = 1
+
+    /**
+     * Provide default path of home folder for jenkins user.
+     */
+    public static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+}
 
 
 /**
@@ -150,7 +179,7 @@ ArrayList itemKeyToJobParam(String key, def value) {
 }
 
 /**
- * Convert map of jenkins pipeline params to arrayList which is required to path into.
+ * Convert map of jenkins pipeline params to arrayList which path is required to run a new build of jenkins job.
  *
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
@@ -171,9 +200,10 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
 }
 
 /**
- * Print event-type and message.
+ * Print colored event type, jenkins job name and message to job console.
  *
- * @param eventNumber - event type: debug, info, etc...
+ * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
+ *                      parameter is true.
  * @param text - text to output.
  */
 def outMsg(Integer eventNumber, String text) {
@@ -183,7 +213,7 @@ def outMsg(Integer eventNumber, String text) {
                 '\033[0;32mINFO\033[0m',
                 '\033[0;33mWARNING\033[0m',
                 '\033[0;31mERROR\033[0m']
-        if (eventNumber.toInteger() != 0 || env.DEBUG_MODE.toBoolean())
+        if (eventNumber.toInteger() != 0 || (params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()))
             println String.format('%s | %s | %s', env.JOB_NAME, eventTypes[eventNumber], text)
     }
 }
@@ -244,7 +274,8 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
  * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verboseLevel = 1) {
+Boolean sendMattermostChannelSingleMessage(String url, String text,
+                                           Integer verboseLevel = OrgAlxGlobals.MattermostMessageDefaultVerboseLevel) {
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
@@ -273,7 +304,8 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
  * @param messageLength - length of sing mattermost message possible to send.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannel(String url, String text, Integer verboseMsg, Integer messageLength = 4000) {
+Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
+                              Integer messageLength = OrgAlxGlobals.MattermostMessageDefaultLength) {
     Boolean overallSendMessageState = true
     if (text.length() >= messageLength) {
         ArrayList splitMessages = []
@@ -323,7 +355,7 @@ static String passwordGenerator(Integer passwordLength) {
  * More readable Map output.
  *
  * @param content - map content.
- * @return - string of human readable map.
+ * @return - human-readable string of map.
  */
 static String readableMap(Map content) {
     return (new JsonBuilder(content).toPrettyString())
@@ -351,7 +383,7 @@ static Map parseJson(String txt) {
  * @return - transliterated text.
  */
 String transliterateString(String text) {
-    return (sh(returnStdout: true, script: String.format('''python3 -c "import sys; from transliterate import ''' +
+    return (sh(returnStdout: true, script: String.format('%s %s', 'python3 -c "import sys; from transliterate import',
             '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim())
 }
 
@@ -364,8 +396,7 @@ String transliterateString(String text) {
  * @return - LazyMap.
  */
 static Map yamlToLazyMap(def yaml) {
-    return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '')
-            .stripIndent())
+    return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
 }
 
 /**
@@ -596,10 +627,11 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param projectGitUrl - Git URL of the project to clone.
  * @param projectGitBranch - Git branch of the project.
  * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
- * @param gitCredentialsId - Git credentials ID
+ * @param gitCredentialsId - Git credentials ID for git authorisation on ansible project clone (something like
+ *                           'a123b01c-456d-7890-ef01-2a34567890b1')
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = GitCredentialsID) {
+                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     dir(projectLocalPath) {
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
@@ -619,7 +651,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  */
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
-                                        String gitCredentialsId = GitCredentialsID) {
+                                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
     if (cleanupBeforeAnsibleClone) sh 'sudo rm -rf *'
     if (ansibleGitUrl.trim())
@@ -660,7 +692,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
                    String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
-                   String gitCredentialsId = GitCredentialsID) {
+                   String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = false
     try {
         String ansibleMode = 'ansible'
@@ -796,7 +828,8 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
-                    Integer timeOut = 1, String jenkinsHomeFolder = '/var/lib/jenkins') {
+                    Integer timeOut = OrgAlxGlobals.WaitSshHostUpDownTimeout,
+                    String jenkinsHomeFolder = OrgAlxGlobals.JenkinsUserDefaultHomeFolder) {
     try {
         sh String.format("ssh-keygen -f '%s/.ssh/known_hosts' -R %s", jenkinsHomeFolder, sshHostname)
         timeout(timeOut) {
