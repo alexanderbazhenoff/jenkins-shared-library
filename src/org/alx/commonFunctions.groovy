@@ -2,10 +2,12 @@ package org.alx
 
 
 /**
+ * Jenkins shared library. Written by Alexander Bazhenov, 2020-2023.
  * Common functions to use in jenkins pipelines.
  *
- * This Source Code Form is subject to the terms of the MIT License. If a copy of the MPL was not distributed with this
- * file, You can obtain one at: https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
+ * This Source Code Form is subject to the terms of the GNU LESSER GENERAL PUBLIC LICENSE v2.1 License.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at:
+ * https://github.com/alexanderbazhenoff/jenkins-shared-library/blob/main/LICENSE
  */
 
 
