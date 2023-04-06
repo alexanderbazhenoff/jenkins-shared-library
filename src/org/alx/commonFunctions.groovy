@@ -935,12 +935,8 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
  * @return - string of failed states list.
  */
 @NonCPS
-static String grepFailedStates(Map states, String inputKeyName) {
-    println String.format('Grep failed states from:\n%s', states[inputKeyName])
-    if (states.find{ it.key == inputKeyName }?.value) {
-        return states[inputKeyName].readLines().grep { it.contains('[FAILED]') }.join('\n')
-    } else {
-        return ''
-    }
+static grepFailedStates(Map states, String inputKeyName) {
+    return (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
+            .grep { it.contains('[FAILED]') }.join('\n') : ''
 }
 
