@@ -70,7 +70,9 @@ class OrgAlxGlobals {
  * @param state - current state: false|true.
  * @param jobUrl - url of the last job run.
  * @param logName - path and name of the logfile to save (leave them blank to skip saving).
- * @return - map with pipeline steps (or phases) names and states including current step (or phase) state.
+ * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
+ *           structure of this map should be: key is the name with spaces cut, value should be a map of:
+ *           [name: name, state: state, url: url]
  */
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
     Integer eventNumber = !state ? 3 : 0
@@ -106,9 +108,21 @@ static String readableJobParams(List params) {
 /**
  * Convert map to jenkins job params.
  *
- * @param config - regression config input.
- * @param checkName - check name item exists in map, otherwise ignore.
- * @return - jenkins job params.
+ * @param config - config input in the next keys format:
+ *
+ *                 name: config name (or just visible name);
+ *                 enabled: true|false (just the way to enable/disable without parameters removal);
+ *                 jobname: jenkins job/pipeline name to execute (will be skipped if wasn't set on checkName=false,
+ *                 or will return an empty arrayList on checkName=true);
+ *
+ *                 Other key-value parameters in this map will be converted to pipeline parameters, where:
+ *
+ *                 key - pipeline/job parameter name to pass downstream pipeline/job;
+ *                 value - pipeline/job parameter value: Boolean will be boolean, List will pass as comma separated
+ *                 string, other types will be converted to string.
+ *
+ * @param checkName - check value of 'name' key exists in map, otherwise ignore.
+ * @return - jenkins job params arrayList.
  */
 ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     String configName
@@ -134,8 +148,8 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
                 outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
                         readableJobParams(jobParams)))
             } else if (config.enabled && !config.jobname?.trim()) {
-                outMsg(2, String.format('%s %s %s', 'Unable to perform regression testing for',
-                        configName, 'jobname in this config wasn\'t set. Skipping testing this config.'))
+                outMsg(2, String.format('%s %s %s', 'Unable to perform jenkins job parameters conversion for',
+                        configName, 'jobname in this config wasn\'t set. Skipping job run for this config.'))
             } else if (!config.enabled) {
                 outMsg(1, String.format('%s config disabled, skipping.', configName))
             }
