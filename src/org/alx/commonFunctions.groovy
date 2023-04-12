@@ -69,12 +69,12 @@ class OrgAlxGlobals {
  * @param name - name of the current step (or phase).
  * @param state - current state: false|true.
  * @param jobUrl - url of the last job run.
- * @param logName - path and name of the logfile to save (leave them blank to skip saving).
+ * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
  * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
  *           structure of this map should be: key is the name with spaces cut, value should be a map of:
  *           [name: name, state: state, url: url]
  */
-Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
+Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '') {
     Integer eventNumber = !state ? 3 : 0
     if (!jobUrl?.trim()) jobUrl = ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
