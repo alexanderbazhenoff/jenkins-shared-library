@@ -747,13 +747,13 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
 /**
  * Clean SSH hosts fingerprints from ~/.ssh/known_hosts.
  *
- * @param hostsToClean - IP List to clean.
+ * @param hostsToClean - IPs, FQCNs or dns names list to clean.
  */
-def cleanSshHostsFingerprints(List hostsToClean) {
+def cleanSshHostsFingerprints(ArrayList hostsToClean) {
     hostsToClean.findAll { it }.each {
-        ArrayList itemsToClean = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] +
-                [sh(script: String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).toString()]
-        itemsToClean.each { host ->
+        ArrayList items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
+                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).split('\n').toList()
+        items.each { host ->
             if (host?.trim()) sh String.format('ssh-keygen -f "${HOME}/.ssh/known_hosts" -R %s', host)
         }
     }
