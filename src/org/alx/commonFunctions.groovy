@@ -642,11 +642,13 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param projectGitBranch - Git branch of the project.
  * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
  * @param gitCredentialsId - Git credentials ID for git authorisation on ansible project clone (something like
- *                           'a123b01c-456d-7890-ef01-2a34567890b1')
+ *                           'a123b01c-456d-7890-ef01-2a34567890b1').
+ * @param cleanBeforeCloning - cleanup directory before cloning.
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = false) {
     dir(projectLocalPath) {
+        if (cleanBeforeCloning) sh 'rm -rf *'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
 }
@@ -667,7 +669,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
-    if (cleanupBeforeAnsibleClone) sh 'sudo rm -rf *'
+    if (cleanupBeforeAnsibleClone) sh 'rm -rf *'
     if (ansibleGitUrl.trim())
         cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId)
     ansibleCollections.each {
@@ -739,7 +741,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
         runAnsibleState = false
     } finally {
-        sh 'sudo rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
+        sh 'rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
         return runAnsibleState
     }
 }
