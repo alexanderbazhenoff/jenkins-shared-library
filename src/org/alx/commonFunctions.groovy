@@ -641,12 +641,12 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param projectGitUrl - Git URL of the project to clone.
  * @param projectGitBranch - Git branch of the project.
  * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
- * @param gitCredentialsId - Git credentials ID for git authorisation on ansible project clone (something like
+ * @param gitCredentialsId - Git credentials ID for git authorisation to clone project (something like
  *                           'a123b01c-456d-7890-ef01-2a34567890b1').
  * @param cleanBeforeCloning - cleanup directory before cloning.
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = false) {
+                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
         if (cleanBeforeCloning) sh 'rm -rf *'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
@@ -669,9 +669,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
-    if (cleanupBeforeAnsibleClone) sh 'rm -rf *'
     if (ansibleGitUrl.trim())
-        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId)
+        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanupBeforeAnsibleClone)
     ansibleCollections.each {
         dir(String.format('ansible/ansible_collections/%s', it.replace('.', '/'))) {
             ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
