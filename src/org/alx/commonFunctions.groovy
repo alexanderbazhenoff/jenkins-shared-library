@@ -648,7 +648,7 @@ Boolean extractArchive(String filenameWithExtension) {
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
-        if (cleanBeforeCloning) sh 'rm -rf *'
+        if (cleanBeforeCloning) sh 'rm -rf ./*'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
 }
