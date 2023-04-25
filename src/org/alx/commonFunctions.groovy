@@ -69,10 +69,12 @@ class OrgAlxGlobals {
  * @param name - name of the current step (or phase).
  * @param state - current state: false|true.
  * @param jobUrl - url of the last job run.
- * @param logName - path and name of the logfile to save (leave them blank to skip saving).
- * @return - map with pipeline steps (or phases) names and states including current step (or phase) state.
+ * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
+ * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
+ *           structure of this map should be: key is the name with spaces cut, value should be a map of:
+ *           [name: name, state: state, url: url].
  */
-Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName) {
+Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '') {
     Integer eventNumber = !state ? 3 : 0
     if (!jobUrl?.trim()) jobUrl = ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
@@ -106,9 +108,21 @@ static String readableJobParams(List params) {
 /**
  * Convert map to jenkins job params.
  *
- * @param config - regression config input.
- * @param checkName - check name item exists in map, otherwise ignore.
- * @return - jenkins job params.
+ * @param config - config input in the next keys format:
+ *
+ *                 name: config name (or just visible name);
+ *                 enabled: true|false (just the way to enable/disable without parameters removal);
+ *                 jobname: jenkins job/pipeline name to execute (will be skipped if wasn't set on checkName=false,
+ *                 or will return an empty arrayList on checkName=true);
+ *
+ *                 Other key-value parameters in this map will be converted to pipeline parameters, where:
+ *
+ *                 key - pipeline/job parameter name to pass downstream pipeline/job;
+ *                 value - pipeline/job parameter value: Boolean will be boolean, List will pass as comma separated
+ *                 string, other types will be converted to string.
+ *
+ * @param checkName - check value of 'name' key exists in map, otherwise ignore.
+ * @return - jenkins job params arrayList.
  */
 ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     String configName
@@ -134,8 +148,8 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
                 outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
                         readableJobParams(jobParams)))
             } else if (config.enabled && !config.jobname?.trim()) {
-                outMsg(2, String.format('%s %s %s', 'Unable to perform regression testing for',
-                        configName, 'jobname in this config wasn\'t set. Skipping testing this config.'))
+                outMsg(2, String.format('%s %s %s', 'Unable to perform jenkins job parameters conversion for',
+                        configName, 'jobname in this config wasn\'t set. Skipping job run for this config.'))
             } else if (!config.enabled) {
                 outMsg(1, String.format('%s config disabled, skipping.', configName))
             }
@@ -269,8 +283,8 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
 /**
  * Send single message to mattermost.
  *
- * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
- * @param text - text,
+ * @param url - url including token (e.g: https://mattermost.com/hooks/<token>).
+ * @param text - text.
  * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
@@ -298,8 +312,8 @@ Boolean sendMattermostChannelSingleMessage(String url, String text,
 /**
  * Send message to mattermost with split by 4000 symbols.
  *
- * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
- * @param text - text,
+ * @param url - url including token (e.g: https://mattermost.com/hooks/<token>).
+ * @param text - text.
  * @param verboseMsg - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @param messageLength - length of sing mattermost message possible to send.
  * @return - true when http OK 200.
@@ -627,12 +641,14 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param projectGitUrl - Git URL of the project to clone.
  * @param projectGitBranch - Git branch of the project.
  * @param projectLocalPath - Local path to clone into (e.g. 'subfolder'). Skip to clone into Jenkins workspace.
- * @param gitCredentialsId - Git credentials ID for git authorisation on ansible project clone (something like
- *                           'a123b01c-456d-7890-ef01-2a34567890b1')
+ * @param gitCredentialsId - Git credentials ID for git authorisation to clone project (something like
+ *                           'a123b01c-456d-7890-ef01-2a34567890b1').
+ * @param cleanBeforeCloning - cleanup directory before cloning.
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
+        if (cleanBeforeCloning) sh 'rm -rf ./*'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
 }
@@ -653,9 +669,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean ansibleGalaxyInstallOk = true
-    if (cleanupBeforeAnsibleClone) sh 'sudo rm -rf *'
     if (ansibleGitUrl.trim())
-        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId)
+        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanupBeforeAnsibleClone)
     ansibleCollections.each {
         dir(String.format('ansible/ansible_collections/%s', it.replace('.', '/'))) {
             ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
@@ -687,7 +702,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *                              Check https://issues.jenkins.io/browse/JENKINS-67209 for details.
  * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible git clone.
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
- * @return - success (true when ok)
+ * @return - success (true when ok).
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
                    String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
@@ -725,7 +740,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
         runAnsibleState = false
     } finally {
-        sh 'sudo rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
+        sh 'rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
         return runAnsibleState
     }
 }
@@ -733,13 +748,13 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
 /**
  * Clean SSH hosts fingerprints from ~/.ssh/known_hosts.
  *
- * @param hostsToClean - IP List to clean.
+ * @param hostsToClean - IPs, FQCNs or dns names list to clean.
  */
-def cleanSshHostsFingerprints(List hostsToClean) {
+def cleanSshHostsFingerprints(ArrayList hostsToClean) {
     hostsToClean.findAll { it }.each {
-        ArrayList itemsToClean = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] +
-                [sh(script: String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).toString()]
-        itemsToClean.each { host ->
+        ArrayList items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
+                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).split('\n').toList()
+        items.each { host ->
             if (host?.trim()) sh String.format('ssh-keygen -f "${HOME}/.ssh/known_hosts" -R %s', host)
         }
     }
@@ -910,7 +925,7 @@ ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false)
  *
  * @param optionsMap - Map with item status and description, e.g:
  *                     [option_1: [state: true, description: 'text_1'],
- *                     option_2: [state: false, description: 'text_2']]
+ *                     option_2: [state: false, description: 'text_2']].
  * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
  * @return - list of [enabled options list, descriptions of enabled options list].
  */
@@ -935,12 +950,8 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
  * @return - string of failed states list.
  */
 @NonCPS
-static String grepFailedStates(Map states, String inputKeyName) {
-    println String.format('Grep failed states from:\n%s', states[inputKeyName])
-    if (states.find{ it.key == inputKeyName }?.value) {
-        return states[inputKeyName].readLines().grep { it.contains('[FAILED]') }.join('\n')
-    } else {
-        return ''
-    }
+static grepFailedStates(Map states, String inputKeyName) {
+    return (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
+            .grep { it.contains('[FAILED]') }.join('\n') : ''
 }
 
