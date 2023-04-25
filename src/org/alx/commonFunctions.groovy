@@ -72,7 +72,7 @@ class OrgAlxGlobals {
  * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
  * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
  *           structure of this map should be: key is the name with spaces cut, value should be a map of:
- *           [name: name, state: state, url: url]
+ *           [name: name, state: state, url: url].
  */
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '') {
     Integer eventNumber = !state ? 3 : 0
@@ -283,8 +283,8 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
 /**
  * Send single message to mattermost.
  *
- * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
- * @param text - text,
+ * @param url - url including token (e.g: https://mattermost.com/hooks/<token>).
+ * @param text - text.
  * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
@@ -312,8 +312,8 @@ Boolean sendMattermostChannelSingleMessage(String url, String text,
 /**
  * Send message to mattermost with split by 4000 symbols.
  *
- * @param url - url including token (e.g: https://mattermost.com/hooks/<token>),
- * @param text - text,
+ * @param url - url including token (e.g: https://mattermost.com/hooks/<token>).
+ * @param text - text.
  * @param verboseMsg - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @param messageLength - length of sing mattermost message possible to send.
  * @return - true when http OK 200.
@@ -702,7 +702,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *                              Check https://issues.jenkins.io/browse/JENKINS-67209 for details.
  * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible git clone.
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
- * @return - success (true when ok)
+ * @return - success (true when ok).
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
                    String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
@@ -925,7 +925,7 @@ ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false)
  *
  * @param optionsMap - Map with item status and description, e.g:
  *                     [option_1: [state: true, description: 'text_1'],
- *                     option_2: [state: false, description: 'text_2']]
+ *                     option_2: [state: false, description: 'text_2']].
  * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
  * @return - list of [enabled options list, descriptions of enabled options list].
  */
