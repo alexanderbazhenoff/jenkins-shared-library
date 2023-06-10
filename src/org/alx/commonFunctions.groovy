@@ -521,7 +521,7 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
  * @param text - text to scan,
  * @return - variables list.
  */
-static ArrayList getVariablesFromRegressionConfigMap(String text) {
+static ArrayList getVariablesMentioningFromString(String text) {
     return text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
 }
 
@@ -540,7 +540,7 @@ static ArrayList getVariablesFromRegressionConfigMap(String text) {
  */
 Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String noDataBindingString) {
     Map messageMap = flattenNestedMap(params)
-    ArrayList messageTemplateVariablesList = getVariablesFromRegressionConfigMap(messageMap.toString())
+    ArrayList messageTemplateVariablesList = getVariablesMentioningFromString(messageMap.toString())
     Map resultsBinding = [:]
     String bindingLogMessage = 'replaceVariablesInMapItemsWithValues | Binding log:\n'
     messageTemplateVariablesList.each {
