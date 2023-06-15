@@ -1,6 +1,7 @@
 package org.alx
 
 
+// https://stackoverflow.com/questions/54125894/jenkins-shared-library-src-class-unable-to-resolve-class
 class OrgAlxGlob implements Serializable {
     public static String GitCredentialsID = ''
 }
