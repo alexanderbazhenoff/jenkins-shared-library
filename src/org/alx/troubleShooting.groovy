@@ -16,5 +16,5 @@ class OrgAlxGlob {
 }
 
 static TestFunctionInSrc(String cred = OrgAlxGlob.GitCredentialsID) {
-    return [String.format('src: %s', cred), OrgAlxGlob.getClass(), OrgAlxGlob.OrgAlxGlob('aaa'), OrgAlxGlob.sayHi()]
+    return [String.format('src: %s', cred), OrgAlxGlob.getClass(), OrgAlxGlob.sayHi()]
 }
