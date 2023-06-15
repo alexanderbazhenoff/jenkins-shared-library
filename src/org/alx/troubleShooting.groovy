@@ -5,10 +5,6 @@ package org.alx
 class OrgAlxGlob {
     public static String GitCredentialsID = '123'
 
-    OrgAlxGlob(String pName) {
-        GitCredentialsID = pName
-    }
-
     static sayHi() {
         return String.format("Hello, %s which is %s.", GitCredentialsID, GitCredentialsID.getClass())
     }
@@ -16,5 +12,5 @@ class OrgAlxGlob {
 }
 
 static TestFunctionInSrc(String cred = OrgAlxGlob.GitCredentialsID) {
-    return [String.format('src: %s', cred), OrgAlxGlob.getClass(), OrgAlxGlob.sayHi()]
+    return [String.format('src: %s', cred), OrgAlxGlob.sayHi().getClass(), OrgAlxGlob.sayHi()]
 }
