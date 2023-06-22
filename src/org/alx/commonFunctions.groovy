@@ -689,9 +689,9 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *
  * @param ansiblePlaybookText - text content of ansible playbook/role.
  * @param ansibleInventoryText - text content of ansible inventory file.
- * @param ansibleGitUrl - Git URL of ansible project to clone and run. Leave empty for ansible collection mode, but skip
- *                        collection cloning and install.
- * @param ansibleGitBranch - gitlab branch of ansible project.
+ * @param ansibleGitUrl - (optional) Git URL of ansible project to clone and run. Leave empty for ansible collection
+ *                        mode, but skip collection cloning and install.
+ * @param ansibleGitBranch - (optional) gitlab branch of ansible project.
  * @param ansibleExtras - (optional) extra params for playbook running.
  * @param ansibleCollections - (optional) list of ansible-galaxy collections dependencies which will be installed before
  *                             running the script. Collections should be placed in ansible gitlab project according to
@@ -704,19 +704,19 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
  * @return - success (true when ok).
  */
-Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
-                   String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
+Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
+                   String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
                    String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = false
+    String ansibleTempPlaybookPathPrefix = ''
     try {
         String ansibleMode = 'ansible'
-        String ansibleTempPlaybookPathPrefix = ''
         if (ansibleCollections) {
-            if (ansibleGitUrl.trim()) {
+            if (ansibleGitUrl?.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
                         cleanupBeforeAnsibleClone, gitCredentialsId)
-                if (!runAnsibleState) return false
+                if (!runAnsibleState) return runAnsibleState
             }
             ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
         } else {
@@ -738,9 +738,9 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         runAnsibleState = true
     } catch (Exception err) {
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
-        runAnsibleState = false
     } finally {
-        sh 'rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
+        sh String.format('rm -f ansible/%sinventory.ini %sinventory.ini || true',
+                ansibleTempPlaybookPathPrefix, ansibleTempPlaybookPathPrefix)
         return runAnsibleState
     }
 }
