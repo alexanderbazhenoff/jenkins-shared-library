@@ -723,20 +723,19 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             ansibleTempPlaybookPathPrefix += '/roles'
         }
         dir(ansibleTempPlaybookPathPrefix) {
-            writeFile file: String.format('inventory.ini', ansibleTempPlaybookPathPrefix), text: ansibleInventoryText
-            writeFile file: String.format('execute.yml', ansibleTempPlaybookPathPrefix), text: ansiblePlaybookText
+            writeFile file: 'inventory.ini', text: ansibleInventoryText
+            writeFile file: 'execute.yml', text: ansiblePlaybookText
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                ansiblePlaybook(playbook: String.format('execute.yml', ansibleTempPlaybookPathPrefix),
-                        inventory: String.format('inventory.ini', ansibleTempPlaybookPathPrefix),
-                        colorized: true, extras: ansibleExtras, installation: ansibleInstallation)
+                ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
+                        colorized: true, extras: ansibleExtras)
             }
         }
         runAnsibleState = true
     } catch (Exception err) {
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
     } finally {
-        sh String.format('rm -f %s/inventory.ini || true', ansibleTempPlaybookPathPrefix, ansibleTempPlaybookPathPrefix)
+        sh String.format('rm -f %s/inventory.ini || true', ansibleTempPlaybookPathPrefix)
         return runAnsibleState
     }
 }
