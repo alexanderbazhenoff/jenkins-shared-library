@@ -709,9 +709,9 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
                    String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = false
-    String ansibleTempPlaybookPathPrefix = ''
+    String ansibleTempPlaybookPathPrefix = 'ansible'
+    String ansibleMode = 'ansible'
     try {
-        String ansibleMode = 'ansible'
         if (ansibleCollections) {
             if (ansibleGitUrl?.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
@@ -720,16 +720,16 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             }
             ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
         } else {
-            ansibleTempPlaybookPathPrefix = 'roles/'
+            ansibleTempPlaybookPathPrefix += '/roles'
         }
-        dir('ansible') {
-            writeFile file: String.format('%sinventory.ini', ansibleTempPlaybookPathPrefix), text: ansibleInventoryText
-            writeFile file: String.format('%sexecute.yml', ansibleTempPlaybookPathPrefix), text: ansiblePlaybookText
+        dir(ansibleTempPlaybookPathPrefix) {
+            writeFile file: String.format('%s/inventory.ini', ansibleTempPlaybookPathPrefix), text: ansibleInventoryText
+            writeFile file: String.format('%s/execute.yml', ansibleTempPlaybookPathPrefix), text: ansiblePlaybookText
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                 ansiblePlaybook(
-                        playbook: String.format('%sexecute.yml', ansibleTempPlaybookPathPrefix),
-                        inventory: String.format('%sinventory.ini', ansibleTempPlaybookPathPrefix),
+                        playbook: String.format('%s/execute.yml', ansibleTempPlaybookPathPrefix),
+                        inventory: String.format('%s/inventory.ini', ansibleTempPlaybookPathPrefix),
                         colorized: true,
                         extras: ansibleExtras,
                         installation: ansibleInstallation)
@@ -739,8 +739,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
     } catch (Exception err) {
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
     } finally {
-        sh String.format('rm -f ansible/%sinventory.ini %sinventory.ini || true',
-                ansibleTempPlaybookPathPrefix, ansibleTempPlaybookPathPrefix)
+        sh String.format('rm -f %s/inventory.ini || true', ansibleTempPlaybookPathPrefix, ansibleTempPlaybookPathPrefix)
         return runAnsibleState
     }
 }
