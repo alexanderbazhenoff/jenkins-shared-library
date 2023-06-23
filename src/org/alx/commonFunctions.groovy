@@ -59,6 +59,11 @@ class OrgAlxGlobals {
      * Provide default path of home folder for jenkins user.
      */
     public static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+
+    /**
+     * Provide default ansible installation predefined in jenkins Global Configuration Tool.
+     */
+    public static String AnsibleInstallationName = 'home_local_bin_ansible'
 }
 
 
@@ -706,8 +711,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
-                   String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
-                   String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+                   String ansibleInstallation = OrgAlxGlobals.AnsibleInstallationName,
+                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = true
     String ansibleTempPlaybookPathPrefix = 'ansible'
     String ansibleMode = 'ansible'
