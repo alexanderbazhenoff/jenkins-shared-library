@@ -726,8 +726,8 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         } else {
             ansiblePlaybookPath += '/roles'
         }
-        sh String.format('rm -f %s/inventory.ini %s/execute.yml || true', ansiblePlaybookPath, ansiblePlaybookPath)
         dir(ansiblePlaybookPath) {
+            sh 'rm -f inventory.ini execute.yml || true'
             writeFile file: 'inventory.ini', text: ansibleInventoryText
             writeFile file: 'execute.yml', text: ansiblePlaybookText
             String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
