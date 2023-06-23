@@ -714,8 +714,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                    String ansibleInstallation = OrgAlxGlobals.AnsibleInstallationName,
                    Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
     Boolean runAnsibleState = true
-    String ansibleTempPlaybookPathPrefix = 'ansible'
-    String ansibleMode = 'ansible'
+    String ansiblePlaybookPath = 'ansible'
     try {
         if (ansibleCollections) {
             if (ansibleGitUrl?.trim()) {
@@ -723,13 +722,16 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                         cleanupBeforeAnsibleClone, gitCredentialsId)
                 if (!runAnsibleState) return false
             }
-            ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
+
         } else {
-            ansibleTempPlaybookPathPrefix += '/roles'
+            ansiblePlaybookPath += '/roles'
         }
-        dir(ansibleTempPlaybookPathPrefix) {
+        sh String.format('rm -f %s/inventory.ini %s/execute.yml || true', ansiblePlaybookPath, ansiblePlaybookPath)
+        dir(ansiblePlaybookPath) {
             writeFile file: 'inventory.ini', text: ansibleInventoryText
             writeFile file: 'execute.yml', text: ansiblePlaybookText
+            String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
+                    String.format(' collection(s)', ansibleCollections.toString()))
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                 ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
@@ -740,7 +742,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
         runAnsibleState = false
     } finally {
-        sh String.format('rm -f %s/inventory.ini || true', ansibleTempPlaybookPathPrefix)
+        sh String.format('rm -f %s/inventory.ini || true', ansiblePlaybookPath)
         return runAnsibleState
     }
 }
