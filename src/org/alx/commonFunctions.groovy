@@ -654,6 +654,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
         if (cleanBeforeCloning) sh 'rm -rf ./*'
+        sh 'ls -lh'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
 }
