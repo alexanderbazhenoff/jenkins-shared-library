@@ -654,7 +654,6 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
                         String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
         if (cleanBeforeCloning) sh 'rm -rf ./*'
-        sh 'ls -lh'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
     }
 }
@@ -728,7 +727,6 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             ansiblePlaybookPath += '/roles'
         }
         dir(ansiblePlaybookPath) {
-            sh 'rm -f inventory.ini execute.yml || true'
             writeFile file: 'inventory.ini', text: ansibleInventoryText
             writeFile file: 'execute.yml', text: ansiblePlaybookText
             String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
