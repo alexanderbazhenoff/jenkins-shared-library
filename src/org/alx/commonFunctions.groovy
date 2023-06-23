@@ -708,7 +708,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
                    String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
-    Boolean runAnsibleState = false
+    Boolean runAnsibleState = true
     String ansibleTempPlaybookPathPrefix = 'ansible'
     String ansibleMode = 'ansible'
     try {
@@ -716,7 +716,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             if (ansibleGitUrl?.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
                         cleanupBeforeAnsibleClone, gitCredentialsId)
-                if (!runAnsibleState) return runAnsibleState
+                if (!runAnsibleState) return false
             }
             ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
         } else {
@@ -731,9 +731,9 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                         colorized: true, extras: ansibleExtras)
             }
         }
-        runAnsibleState = true
     } catch (Exception err) {
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
+        runAnsibleState = false
     } finally {
         sh String.format('rm -f %s/inventory.ini || true', ansibleTempPlaybookPathPrefix)
         return runAnsibleState
