@@ -741,7 +741,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
         runAnsibleState = false
     } finally {
-        sh String.format('rm -f %s/inventory.ini || true', ansiblePlaybookPath)
+        //sh String.format('rm -f %s/inventory.ini || true', ansiblePlaybookPath)
         return runAnsibleState
     }
 }
