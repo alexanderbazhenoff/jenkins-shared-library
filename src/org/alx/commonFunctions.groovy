@@ -226,14 +226,15 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
  * @param text - text to output.
  */
 def outMsg(Integer eventNumber, String text) {
-    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-        ArrayList eventTypes = [
-                '\033[0;34mDEBUG\033[0m',
-                '\033[0;32mINFO\033[0m',
-                '\033[0;33mWARNING\033[0m',
-                '\033[0;31mERROR\033[0m']
-        if (eventNumber.toInteger() != 0 || (params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()))
+    if (eventNumber.toInteger() != 0 || params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()) {
+        wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+            ArrayList eventTypes = [
+                    '\033[0;34mDEBUG\033[0m',
+                    '\033[0;32mINFO\033[0m',
+                    '\033[0;33mWARNING\033[0m',
+                    '\033[0;31mERROR\033[0m']
             println String.format('%s | %s | %s', env.JOB_NAME, eventTypes[eventNumber], text)
+        }
     }
 }
 
