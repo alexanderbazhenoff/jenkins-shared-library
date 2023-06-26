@@ -223,17 +223,18 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
  *
  * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
  *                      parameter is true.
+ * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param text - text to output.
  */
-def outMsg(Integer eventNumber, String text) {
-    if (eventNumber.toInteger() != 0 || params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()) {
+def outMsg(Integer eventNumber, String text, Object envVariables = env) {
+    if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
             ArrayList eventTypes = [
                     '\033[0;34mDEBUG\033[0m',
                     '\033[0;32mINFO\033[0m',
                     '\033[0;33mWARNING\033[0m',
                     '\033[0;31mERROR\033[0m']
-            println String.format('%s | %s | %s', env.JOB_NAME, eventTypes[eventNumber], text)
+            println String.format('%s | %s | %s', envVariables.JOB_NAME, eventTypes[eventNumber], text)
         }
     }
 }
