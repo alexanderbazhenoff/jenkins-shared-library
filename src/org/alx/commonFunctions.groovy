@@ -182,18 +182,28 @@ static String readableError(Throwable error) {
  *
  * @param key - item key name.
  * @param value - item key value.
- * @return - an item of array list for jenkins pipeline job param.
+ * @param type - (optional) item parameter type: string, choice, boolean, text, password or undefined to autodetect.
+ * @param upperCaseKeyName - (optional) true when convert parameters to uppercase is required.
+ * @param param - (optional) other parameters to add to them.
+ * @return - array list for jenkins pipeline job parameters.
  */
-ArrayList itemKeyToJobParam(String key, def value) {
-    ArrayList param = []
-    if (value instanceof Boolean)
-        param += [booleanParam(name: key.toUpperCase().toString(), value: value)]
-    if (value instanceof List)
-        param += [string(name: key.toUpperCase().toString(), value: value.toString().replaceAll(',', ''))]
-    if (value instanceof String)
-        param += [string(name: key.toUpperCase().toString(), value: value)]
+ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true,
+                            ArrayList param = []) {
+    String keyName = upperCaseKeyName ? key.toUpperCase() : key
+    if (value instanceof Boolean || type == 'boolean')
+        param += [booleanParam(name: keyName, value: value)]
+    if (value instanceof List && type != 'choice')
+        param += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
+    if (value instanceof List && type == 'choice')
+        param += [choice(name: keyName, value: value.each() { it.toString() })]
+    if (value instanceof String && (type == 'string' || !type?.trim()))
+        param += [string(name: keyName, value: value)]
+    if (value instanceof String && type == 'text')
+        param += [text(name: keyName, value: value)]
+    if (value instanceof String && type == 'password')
+        param += [password(name: keyName, value: value)]
     if (value instanceof Integer || value instanceof Float || value instanceof BigInteger)
-        param += [string(name: key.toUpperCase().toString(), value: value.toString())]
+        param += [string(name: keyName, value: value.toString())]
     return param
 }
 
@@ -202,7 +212,7 @@ ArrayList itemKeyToJobParam(String key, def value) {
  *
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
- *           build job: 'job_name', parameters: this_params.
+ *           build job: 'job_name', parameters: these_params.
  */
 ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
     ArrayList jobParams = []
