@@ -184,27 +184,27 @@ static String readableError(Throwable error) {
  * @param value - item key value.
  * @param type - (optional) item parameter type: string, choice, boolean, text, password or undefined to autodetect.
  * @param upperCaseKeyName - (optional) true when convert parameters to uppercase is required.
- * @param param - (optional) other parameters to add to them.
+ * @param params - (optional) other parameters to add to them.
  * @return - array list for jenkins pipeline job parameters.
  */
 ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true,
-                            ArrayList param = []) {
+                            ArrayList params = []) {
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
     if (value instanceof Boolean || type == 'boolean')
-        param += [booleanParam(name: keyName, value: value)]
+        params += [booleanParam(name: keyName, value: value)]
     if (value instanceof List && type != 'choice')
-        param += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
+        params += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
     if (value instanceof List && type == 'choice')
-        param += [choice(name: keyName, value: value.each() { it.toString() })]
+        params += [choice(name: keyName, value: value.each() { it.toString() })]
     if (value instanceof String && (type == 'string' || !type?.trim()))
-        param += [string(name: keyName, value: value)]
+        params += [string(name: keyName, value: value)]
     if (value instanceof String && type == 'text')
-        param += [text(name: keyName, value: value)]
+        params += [text(name: keyName, value: value)]
     if (value instanceof String && type == 'password')
-        param += [password(name: keyName, value: value)]
+        params += [password(name: keyName, value: value)]
     if (value instanceof Integer || value instanceof Float || value instanceof BigInteger)
-        param += [string(name: keyName, value: value.toString())]
-    return param
+        params += [string(name: keyName, value: value.toString())]
+    return params
 }
 
 /**
