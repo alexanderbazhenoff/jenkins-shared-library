@@ -192,10 +192,8 @@ ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upp
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
     if (value instanceof Boolean || type == 'boolean')
         params += [booleanParam(name: keyName, value: value)]
-    if (value instanceof List && type != 'choice')
+    if (value instanceof List)
         params += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
-    if (value instanceof List && type == 'choice')
-        params += [choice(name: keyName, value: value.each() { it.toString() })]
     if (value instanceof String && (type == 'string' || !type?.trim()))
         params += [string(name: keyName, value: value)]
     if (value instanceof String && type == 'text')
