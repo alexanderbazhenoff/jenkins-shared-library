@@ -105,7 +105,7 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
  * @param params - list of job/pipeline params.
  * @return - string of human readable params list.
  */
-static String readableJobParams(List params) {
+static String readableJobParams(ArrayList params) {
     return params.toString().replaceAll('\\[', '[\n\t').replaceAll(']', '\n]')
             .replaceAll('\\), ', '),\n\t')
 }
@@ -192,7 +192,7 @@ ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upp
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
     if (value instanceof Boolean || type == 'boolean')
         params += [booleanParam(name: keyName, value: value)]
-    if (value instanceof List)
+    if (value instanceof ArrayList)
         params += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
     if (value instanceof String && (type == 'string' || !type?.trim()))
         params += [string(name: keyName, value: value)]
