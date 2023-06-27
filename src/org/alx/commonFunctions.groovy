@@ -777,7 +777,7 @@ def cleanSshHostsFingerprints(ArrayList hostsToClean) {
  * @param jobName - job or jenkins pipeline name.
  * @param jobParams - job or pipeline parameters.
  * @param dryRun - dry run mode enabled.
- * @param runJobWithDryRunParam - (optional) run job or pipeline with additional enabled DRY_RUN parameter. Otherwise
+ * @param runJobWithDryRunParam - (optional) run job or pipeline with additional enabled DRY_RUN parameter, otherwise
  *                                do not run and print the message.
  * @param propagateErrors - (optional) propagate job or pipeline errors.
  * @param waitForComplete - (optional) wait for completion.
