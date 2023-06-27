@@ -783,17 +783,18 @@ def cleanSshHostsFingerprints(ArrayList hostsToClean) {
  * @param waitForComplete - (optional) wait for completion.
  * @param envVariables - (optional) env variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param dryRunEnvVariableName - (optional) environment variable name of dry-run switch.
+ * @param printableJobParams - (optional) just printable
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
 def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
-                     String dryRunEnvVariableName = 'DRY_RUN') {
+                     String dryRunEnvVariableName = 'DRY_RUN', ArrayList printableJobParams = []) {
     if (runJobWithDryRunParam)
         jobParams += [booleanParam(name: dryRunEnvVariableName, value: envVariables.getEnvironment()
                 .get(dryRunEnvVariableName)?.toBoolean())]
     if (dryRun)
         outMsg(2, String.format("Dry-run mode. Run '%s': %s. Job/pipeline parameters:\n%s", jobName,
-                runJobWithDryRunParam, readableJobParams(jobParams)))
+                runJobWithDryRunParam, readableJobParams(printableJobParams.size() ? printableJobParams : jobParams)))
     if (!dryRun || runJobWithDryRunParam) {
         return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
     } else {
