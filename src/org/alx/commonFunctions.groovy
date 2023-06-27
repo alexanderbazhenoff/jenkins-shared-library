@@ -777,21 +777,22 @@ def cleanSshHostsFingerprints(ArrayList hostsToClean) {
  * @param jobName - job or jenkins pipeline name.
  * @param jobParams - job or pipeline parameters.
  * @param dryRun - dry run mode enabled.
- * @param runJobWithDryRunParam - run job or pipeline with additional enabled DRY_RUN parameter.
- * @param propagateErrors - propagate job or pipeline errors.
- * @param waitForComplete - wait for completion.
- * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param dryRunEnvVariableName - environment variable name of dry-run switch.
+ * @param runJobWithDryRunParam - (optional) run job or pipeline with additional enabled DRY_RUN parameter. Otherwise
+ *                                do not run and print the message.
+ * @param propagateErrors - (optional) propagate job or pipeline errors.
+ * @param waitForComplete - (optional) wait for completion.
+ * @param envVariables - (optional) env variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param dryRunEnvVariableName - (optional) environment variable name of dry-run switch.
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
 def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
                      String dryRunEnvVariableName = 'DRY_RUN') {
     if (runJobWithDryRunParam)
-        jobParams += [booleanParam(name: 'DRY_RUN',
-                value: envVariables.getEnvironment().get(dryRunEnvVariableName)?.toBoolean())]
+        jobParams += [booleanParam(name: dryRunEnvVariableName, value: envVariables.getEnvironment()
+                .get(dryRunEnvVariableName)?.toBoolean())]
     if (dryRun)
-        outMsg(2, String.format("Dry-run mode. Run '%s': %s. Job/pipeline parameters: \n%s", jobName,
+        outMsg(2, String.format("Dry-run mode. Run '%s': %s. Job/pipeline parameters:\n%s", jobName,
                 runJobWithDryRunParam, readableJobParams(jobParams)))
     if (!dryRun || runJobWithDryRunParam) {
         return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
