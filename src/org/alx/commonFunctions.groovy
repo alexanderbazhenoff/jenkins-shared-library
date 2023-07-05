@@ -59,6 +59,11 @@ class OrgAlxGlobals {
      * Provide default path of home folder for jenkins user.
      */
     public static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+
+    /**
+     * Provide default ansible installation predefined in jenkins Global Configuration Tool.
+     */
+    public static String AnsibleInstallationName = 'home_local_bin_ansible'
 }
 
 
@@ -100,7 +105,7 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
  * @param params - list of job/pipeline params.
  * @return - string of human readable params list.
  */
-static String readableJobParams(List params) {
+static String readableJobParams(ArrayList params) {
     return params.toString().replaceAll('\\[', '[\n\t').replaceAll(']', '\n]')
             .replaceAll('\\), ', '),\n\t')
 }
@@ -177,19 +182,27 @@ static String readableError(Throwable error) {
  *
  * @param key - item key name.
  * @param value - item key value.
- * @return - an item of array list for jenkins pipeline job param.
+ * @param type - (optional) item parameter type: string, choice, boolean, text, password or undefined to autodetect.
+ * @param upperCaseKeyName - (optional) true when convert parameters to uppercase is required.
+ * @param params - (optional) other parameters to add to them.
+ * @return - array list for jenkins pipeline job parameters.
  */
-ArrayList itemKeyToJobParam(String key, def value) {
-    ArrayList param = []
-    if (value instanceof Boolean)
-        param += [booleanParam(name: key.toUpperCase().toString(), value: value)]
-    if (value instanceof List)
-        param += [string(name: key.toUpperCase().toString(), value: value.toString().replaceAll(',', ''))]
-    if (value instanceof String)
-        param += [string(name: key.toUpperCase().toString(), value: value)]
+ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true,
+                            ArrayList params = []) {
+    String keyName = upperCaseKeyName ? key.toUpperCase() : key
+    if (value instanceof Boolean || type == 'boolean')
+        params += [booleanParam(name: keyName, value: value)]
+    if (value instanceof ArrayList)
+        params += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
+    if (value instanceof String && (type == 'string' || !type?.trim()))
+        params += [string(name: keyName, value: value)]
+    if (value instanceof String && type == 'text')
+        params += [text(name: keyName, value: value)]
+    if (value instanceof String && type == 'password')
+        params += [password(name: keyName, value: value)]
     if (value instanceof Integer || value instanceof Float || value instanceof BigInteger)
-        param += [string(name: key.toUpperCase().toString(), value: value.toString())]
-    return param
+        params += [string(name: keyName, value: value.toString())]
+    return params
 }
 
 /**
@@ -197,7 +210,7 @@ ArrayList itemKeyToJobParam(String key, def value) {
  *
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g:
- *           build job: 'job_name', parameters: this_params.
+ *           build job: 'job_name', parameters: these_params.
  */
 ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
     ArrayList jobParams = []
@@ -218,17 +231,19 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
  *
  * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
  *                      parameter is true.
+ * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param text - text to output.
  */
-def outMsg(Integer eventNumber, String text) {
-    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-        ArrayList eventTypes = [
-                '\033[0;34mDEBUG\033[0m',
-                '\033[0;32mINFO\033[0m',
-                '\033[0;33mWARNING\033[0m',
-                '\033[0;31mERROR\033[0m']
-        if (eventNumber.toInteger() != 0 || (params.containsKey('DEBUG_MODE') && env.DEBUG_MODE.toBoolean()))
-            println String.format('%s | %s | %s', env.JOB_NAME, eventTypes[eventNumber], text)
+def outMsg(Integer eventNumber, String text, Object envVariables = env) {
+    if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
+        wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+            ArrayList eventTypes = [
+                    '\033[0;34mDEBUG\033[0m',
+                    '\033[0;32mINFO\033[0m',
+                    '\033[0;33mWARNING\033[0m',
+                    '\033[0;31mERROR\033[0m']
+            println String.format('%s | %s | %s', envVariables.JOB_NAME, eventTypes[eventNumber], text)
+        }
     }
 }
 
@@ -521,7 +536,7 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
  * @param text - text to scan,
  * @return - variables list.
  */
-static ArrayList getVariablesFromRegressionConfigMap(String text) {
+static ArrayList getVariablesMentioningFromString(String text) {
     return text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
 }
 
@@ -540,7 +555,7 @@ static ArrayList getVariablesFromRegressionConfigMap(String text) {
  */
 Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String noDataBindingString) {
     Map messageMap = flattenNestedMap(params)
-    ArrayList messageTemplateVariablesList = getVariablesFromRegressionConfigMap(messageMap.toString())
+    ArrayList messageTemplateVariablesList = getVariablesMentioningFromString(messageMap.toString())
     Map resultsBinding = [:]
     String bindingLogMessage = 'replaceVariablesInMapItemsWithValues | Binding log:\n'
     messageTemplateVariablesList.each {
@@ -689,9 +704,9 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *
  * @param ansiblePlaybookText - text content of ansible playbook/role.
  * @param ansibleInventoryText - text content of ansible inventory file.
- * @param ansibleGitUrl - Git URL of ansible project to clone and run. Leave empty for ansible collection mode,
- *                           but skip collection cloning and install.
- * @param ansibleGitBranch - gitlab branch of ansible project.
+ * @param ansibleGitUrl - (optional) Git URL of ansible project to clone and run. Leave empty for ansible collection
+ *                        mode, but skip collection cloning and install.
+ * @param ansibleGitBranch - (optional) gitlab branch of ansible project.
  * @param ansibleExtras - (optional) extra params for playbook running.
  * @param ansibleCollections - (optional) list of ansible-galaxy collections dependencies which will be installed before
  *                             running the script. Collections should be placed in ansible gitlab project according to
@@ -704,43 +719,39 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
  * @return - success (true when ok).
  */
-Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl,
-                   String ansibleGitBranch, String ansibleExtras = '', List ansibleCollections = [],
-                   String ansibleInstallation = '', Boolean cleanupBeforeAnsibleClone = true,
-                   String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
-    Boolean runAnsibleState = false
+Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
+                   String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
+                   String ansibleInstallation = OrgAlxGlobals.AnsibleInstallationName,
+                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+    Boolean runAnsibleState = true
+    String ansiblePlaybookPath = 'ansible'
     try {
-        String ansibleMode = 'ansible'
-        String ansibleTempPlaybookPathPrefix = ''
         if (ansibleCollections) {
-            if (ansibleGitUrl.trim()) {
+            if (ansibleGitUrl?.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
                         cleanupBeforeAnsibleClone, gitCredentialsId)
                 if (!runAnsibleState) return false
             }
-            ansibleMode = String.format('ansible collection(s) %s', ansibleCollections.toString())
+
         } else {
-            ansibleTempPlaybookPathPrefix = 'roles/'
+            ansiblePlaybookPath += '/roles'
         }
-        dir('ansible') {
-            writeFile file: String.format('%sinventory.ini', ansibleTempPlaybookPathPrefix), text: ansibleInventoryText
-            writeFile file: String.format('%sexecute.yml', ansibleTempPlaybookPathPrefix), text: ansiblePlaybookText
+        dir(ansiblePlaybookPath) {
+            writeFile file: 'inventory.ini', text: ansibleInventoryText
+            writeFile file: 'execute.yml', text: ansiblePlaybookText
+            String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
+                    String.format(' collection(s)', ansibleCollections.toString()))
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                ansiblePlaybook(
-                        playbook: String.format('%sexecute.yml', ansibleTempPlaybookPathPrefix),
-                        inventory: String.format('%sinventory.ini', ansibleTempPlaybookPathPrefix),
-                        colorized: true,
-                        extras: ansibleExtras,
-                        installation: ansibleInstallation)
+                ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
+                        colorized: true, extras: ansibleExtras)
             }
         }
-        runAnsibleState = true
     } catch (Exception err) {
         outMsg(3, String.format('Running ansible failed: %s', readableError(err)))
         runAnsibleState = false
     } finally {
-        sh 'rm -f ansible/roles/inventory.ini ansible/inventory.ini || true'
+        sh String.format('rm -f %s/inventory.ini || true', ansiblePlaybookPath)
         return runAnsibleState
     }
 }
@@ -766,18 +777,24 @@ def cleanSshHostsFingerprints(ArrayList hostsToClean) {
  * @param jobName - job or jenkins pipeline name.
  * @param jobParams - job or pipeline parameters.
  * @param dryRun - dry run mode enabled.
- * @param runJobWithDryRunParam - run job or pipeline with additional enabled DRY_RUN parameter.
- * @param propagateErrors - propagate job or pipeline errors.
- * @param waitForComplete - wait for completion.
+ * @param runJobWithDryRunParam - (optional) run job or pipeline with additional enabled DRY_RUN parameter, otherwise
+ *                                do not run and print the message.
+ * @param propagateErrors - (optional) propagate job or pipeline errors.
+ * @param waitForComplete - (optional) wait for completion.
+ * @param envVariables - (optional) env variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param dryRunEnvVariableName - (optional) environment variable name of dry-run switch.
+ * @param printableJobParams - (optional) just printable
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
 def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
-                     Boolean propagateErrors = true, Boolean waitForComplete = true) {
+                     Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
+                     String dryRunEnvVariableName = 'DRY_RUN', ArrayList printableJobParams = []) {
     if (runJobWithDryRunParam)
-        jobParams += [booleanParam(name: 'DRY_RUN', value: env.DRY_RUN.toBoolean())]
+        jobParams += [booleanParam(name: dryRunEnvVariableName, value: envVariables.getEnvironment()
+                .get(dryRunEnvVariableName)?.toBoolean())]
     if (dryRun)
-        outMsg(2, String.format('Dry-run mode. Run \'%s\': %s. Job/pipeline parameters: \n%s', jobName,
-                runJobWithDryRunParam, readableJobParams(jobParams)))
+        outMsg(2, String.format("Dry-run mode. Run '%s': %s. Job/pipeline parameters:\n%s", jobName,
+                runJobWithDryRunParam, readableJobParams(printableJobParams.size() ? printableJobParams : jobParams)))
     if (!dryRun || runJobWithDryRunParam) {
         return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
     } else {
@@ -943,15 +960,16 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
 }
 
 /**
- * Grep only filed states from stages status list in string format.
+ * Grep only specified states from stages status list.
  *
  * @param states - map including key with these states steps.
  * @param inputKeyName - key name in this map to get failed states from.
+ * @param grepString - string pattern that should be contained to grep.
  * @return - string of failed states list.
  */
 @NonCPS
-static grepFailedStates(Map states, String inputKeyName) {
+static grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
     return (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
-            .grep { it.contains('[FAILED]') }.join('\n') : ''
+            .grep { it.contains(grepString) }.join('\n') : ''
 }
 
