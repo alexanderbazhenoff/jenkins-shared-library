@@ -190,18 +190,14 @@ static String readableError(Throwable error) {
 ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true,
                             ArrayList params = []) {
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
-    if (value instanceof Boolean || type == 'boolean')
-        params += [booleanParam(name: keyName, value: value)]
-    if (value instanceof ArrayList)
-        params += [string(name: keyName, value: value.toString().replaceAll(',', ''))]
-    if (value instanceof String && (type == 'string' || !type?.trim()))
-        params += [string(name: keyName, value: value)]
-    if (value instanceof String && type == 'text')
-        params += [text(name: keyName, value: value)]
-    if (value instanceof String && type == 'password')
-        params += [password(name: keyName, value: value)]
-    if (value instanceof Integer || value instanceof Float || value instanceof BigInteger)
-        params += [string(name: keyName, value: value.toString())]
+    params += value instanceof Boolean || type == 'boolean' ? [booleanParam(name: keyName, value: value)] : []
+    params += value instanceof ArrayList ? string(name: keyName, value: value.toString().replaceAll(',', '')) : []
+    params += value instanceof String && (type == 'string' || !type?.trim()) ?
+            [string(name: keyName, value: value)] : []
+    params += value instanceof String && type == 'text' ? [text(name: keyName, value: value)] : []
+    params += value instanceof String && type == 'password' ? [password(name: keyName, value: value)] : []
+    params += value instanceof Integer || value instanceof Float || value instanceof BigInteger ?
+            [string(name: keyName, value: value.toString())] : []
     return params
 }
 
@@ -209,8 +205,7 @@ ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upp
  * Convert map of jenkins pipeline params to arrayList which path is required to run a new build of jenkins job.
  *
  * @param mapConfig - Map with the whole pipeline params.
- * @return - array list for jenkins pipeline running, e.g:
- *           build job: 'job_name', parameters: these_params.
+ * @return - array list for jenkins pipeline running, e.g: build job: 'job_name', parameters: these_params.
  */
 ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
     ArrayList jobParams = []
