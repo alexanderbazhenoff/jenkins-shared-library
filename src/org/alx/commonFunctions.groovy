@@ -96,9 +96,8 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
         writeFile file: logName, text: statesTextTable
         archiveArtifacts allowEmptyArchive: true, artifacts: logName
     }
-    if (printOverallMessage)
-        outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
-                .replace('true', 'SUCCESS'), jobUrl))
+    outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
+            .replace('true', 'SUCCESS'), jobUrl))
     return states
 }
 
