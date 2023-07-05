@@ -75,12 +75,14 @@ class OrgAlxGlobals {
  * @param state - current state: false|true.
  * @param jobUrl - url of the last job run.
  * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
+ * @param printErrorMessage - true to print error message on status error, otherwise print only debug messages.
  * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
  *           structure of this map should be: key is the name with spaces cut, value should be a map of:
  *           [name: name, state: state, url: url].
  */
-Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '') {
-    Integer eventNumber = !state ? 3 : 0
+Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '',
+                            Boolean printErrorMessage = true) {
+    Integer eventNumber = !state && printErrorMessage ? 3 : 0
     if (!jobUrl?.trim()) jobUrl = ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
     if (logName?.trim()) {
@@ -94,8 +96,9 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
         writeFile file: logName, text: statesTextTable
         archiveArtifacts allowEmptyArchive: true, artifacts: logName
     }
-    outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
-            .replace('true', 'SUCCESS'), jobUrl))
+    if (printOverallMessage)
+        outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
+                .replace('true', 'SUCCESS'), jobUrl))
     return states
 }
 
