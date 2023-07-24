@@ -409,8 +409,8 @@ static Map parseJson(String txt) {
  * @return - transliterated text.
  */
 String transliterateString(String text) {
-    return (sh(returnStdout: true, script: String.format('%s %s', 'python3 -c "import sys; from transliterate import',
-            '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim())
+    return sh (returnStdout: true, script: String.format('python3 -c "import sys; from transliterate import ' +
+            '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim()
 }
 
 /**
