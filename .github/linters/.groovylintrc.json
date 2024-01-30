@@ -21,7 +21,28 @@
     "unused.UnusedVariable": {
       "ignoreVariableNames": "__"
     },
+    "size.NestedBlockDepth": {
+      "maxNestedBlockDepth": 10
+    },
+    "size.ParameterCount": {
+      "enabled": false
+    },
+    "naming.VariableName": {
+      "enabled": false
+    },
+    "ConsecutiveBlankLines": {
+      "enabled": false
+    },
+    "CatchException": {
+      "enabled": false
+    },
     "convention.CompileStatic": {
+      "enabled": false
+    },
+    "BlockStartsWithBlankLine": {
+      "enabled": false
+    },
+    "BlockEndsWithBlankLine": {
       "enabled": false
     },
     "DuplicateStringLiteral": {

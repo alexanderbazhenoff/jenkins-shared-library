@@ -1,7 +1,6 @@
 import hudson.FilePath
 import hudson.model.ParametersAction
 import hudson.model.FileParameterValue
-import hudson.model.Executor
 
 
 /**
