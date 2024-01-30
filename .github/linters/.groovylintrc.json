@@ -39,6 +39,9 @@
     "Instanceof": {
       "enabled": false
     },
+    "StaticMethodsBeforeInstanceMethods": {
+      "enabled": false
+    },
     "convention.CompileStatic": {
       "enabled": false
     },

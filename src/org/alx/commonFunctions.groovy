@@ -44,27 +44,27 @@ class OrgAlxGlobals {
     /**
      * Provide default verbose level for send message to mattermost function.
      */
-    public static final Integer mattermostMessageDefaultVerboseLevel = 1
+    public static final Integer MATTERMOST_MESSAGE_DEFAULT_VERBOSE_LEVEL = 1
 
     /**
      * Provide default length of mattermost message.
      */
-    public static final Integer mattermostMessageDefaultLength = 4000
+    public static final Integer MATTERMOST_MESSAGE_DEFAULT_LENGTH = 4000
 
     /**
      * Provide default time-out for wait ssh host up or down (in minutes).
      */
-    public static final Integer waitSshHostUpDownTimeout = 1
+    public static final Integer WAIT_SSH_HOST_UP_DOWN_TIMEOUT = 1
 
     /**
      * Provide default path of home folder for jenkins user.
      */
-    public static final String jenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+    public static final String JENKINS_USER_DEFAULT_HOME_FOLDER = '/var/lib/jenkins'
 
     /**
      * Provide default ansible installation predefined in jenkins Global Configuration Tool.
      */
-    public static final String ansibleInstallationName = 'home_local_bin_ansible'
+    public static final String ANSIBLE_INSTALLATION_NAME = 'home_local_bin_ansible'
 
 }
 
@@ -109,8 +109,8 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
  * @param params - list of job/pipeline params.
  * @return - string of human readable params list.
  */
-static String readableJobParams(ArrayList params) {
-    return params.toString().replaceAll('\\[', '[\n\t').replaceAll(']', '\n]')
+static String readableJobParams(List params) {
+    params.toString().replaceAll('\\[', '[\n\t').replaceAll(']', '\n]')
             .replaceAll('\\), ', '),\n\t')
 }
 
@@ -133,9 +133,9 @@ static String readableJobParams(ArrayList params) {
  * @param checkName - check value of 'name' key exists in map, otherwise ignore.
  * @return - jenkins job params arrayList.
  */
-ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
+List mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     String configName
-    ArrayList jobParams = []
+    List jobParams = []
     try {
         if (config.get('name')) {
             configName = config.name
@@ -169,7 +169,7 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
     } catch (Exception err) {
         outMsg(3, String.format('Converting yaml config to jenkins job params error: %s', readableError(err)))
     }
-    return jobParams
+    jobParams
 }
 
 /**
@@ -178,7 +178,7 @@ ArrayList mapToJenkinsJobParams(Map config, Boolean checkName = true) {
  * @param error - Exception error.
  */
 static String readableError(Throwable error) {
-    return String.format('Line %s: %s', error.stackTrace.head().lineNumber, StackTraceUtils.sanitize(error))
+    String.format('Line %s: %s', error.stackTrace.head().lineNumber, StackTraceUtils.sanitize(error))
 }
 
 /**
@@ -191,8 +191,7 @@ static String readableError(Throwable error) {
  * @param params - (optional) other parameters to add to them.
  * @return - array list for jenkins pipeline job parameters.
  */
-ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true,
-                            ArrayList params = []) {
+List itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true, List params = []) {
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
     params += value instanceof Boolean || type == 'boolean' ? [booleanParam(name: keyName, value: value)] : []
     params += value instanceof ArrayList ? string(name: keyName, value: value.toString().replaceAll(',', '')) : []
@@ -202,7 +201,7 @@ ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upp
     params += value instanceof String && type == 'password' ? [password(name: keyName, value: value)] : []
     params += value instanceof Integer || value instanceof Float || value instanceof BigInteger ?
             [string(name: keyName, value: value.toString())] : []
-    return params
+    params
 }
 
 /**
@@ -211,8 +210,8 @@ ArrayList itemKeyToJobParam(String key, def value, String type = '', Boolean upp
  * @param mapConfig - Map with the whole pipeline params.
  * @return - array list for jenkins pipeline running, e.g: build job: 'job_name', parameters: these_params.
  */
-ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
-    ArrayList jobParams = []
+List mapConfigToJenkinsJobParam(Map mapConfig) {
+    List jobParams = []
     mapConfig.each {
         String paramPrefix = ''
         if (it.value instanceof Map) {
@@ -222,7 +221,7 @@ ArrayList mapConfigToJenkinsJobParam(Map mapConfig) {
             jobParams += itemKeyToJobParam(it.key.toString(), it.value)
         }
     }
-    return jobParams
+    jobParams
 }
 
 /**
@@ -269,9 +268,9 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
     Map status = [:]
     try {
         HttpPost httpPost = new HttpPost(httpUrl)
-        httpPost.setHeader("Content-Type", headerType)
+        httpPost.setHeader('Content-Type', headerType)
 
-        HttpEntity reqEntity = new StringEntity(data, "UTF-8")
+        HttpEntity reqEntity = new StringEntity(data, 'UTF-8')
         reqEntity.setContentType(contentType)
         reqEntity.setChunked(true)
 
@@ -302,8 +301,8 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
  * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
-Boolean sendMattermostChannelSingleMessage(String url, String text,
-                                           Integer verboseLevel = OrgAlxGlobals.mattermostMessageDefaultVerboseLevel) {
+Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verboseLevel = OrgAlxGlobals
+        .MATTERMOST_MESSAGE_DEFAULT_VERBOSE_LEVEL) {
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
@@ -316,11 +315,10 @@ Boolean sendMattermostChannelSingleMessage(String url, String text,
     if (mattermostResponse.get('response_status_line')) {
         if (verboseLevel >= 1) println String.format('Sending mattermost: %s', mattermostResponse.response_status_line)
         return (mattermostResponse['response_status_line'].toString().contains('200 OK'))
-    } else {
-        println String.format('Sending mattermost: %s', (mattermostResponse.get('response_content') ?
-                mattermostResponse.response_content : '<null or empty>'))
-        return false
     }
+    println String.format('Sending mattermost: %s', (mattermostResponse.get('response_content') ?
+            mattermostResponse.response_content : '<null or empty>'))
+    return false
 }
 
 /**
@@ -333,10 +331,10 @@ Boolean sendMattermostChannelSingleMessage(String url, String text,
  * @return - true when http OK 200.
  */
 Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
-                              Integer messageLength = OrgAlxGlobals.mattermostMessageDefaultLength) {
+                              Integer messageLength = OrgAlxGlobals.MATTERMOST_MESSAGE_DEFAULT_LENGTH) {
     Boolean overallSendMessageState = true
     if (text.length() >= messageLength) {
-        ArrayList splitMessages = []
+        List splitMessages = []
         List splitByEnterMessage = text.tokenize('\n').toList()
         Integer messageIndex = 0
         splitMessages[messageIndex] = ''
@@ -363,9 +361,8 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
                 overallSendMessageState = false
         }
         return overallSendMessageState
-    } else {
-        return sendMattermostChannelSingleMessage(url, text, verboseMsg)
     }
+    return sendMattermostChannelSingleMessage(url, text, verboseMsg)
 }
 
 /**
@@ -720,8 +717,9 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
-                   String ansibleInstallation = OrgAlxGlobals.ansibleInstallationName,
-                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
+                   String ansibleInstallation = OrgAlxGlobals.ANSIBLE_INSTALLATION_NAME,
+                   Boolean cleanupBeforeAnsibleClone = true,
+                   String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
     Boolean runAnsibleState = true
     String ansiblePlaybookPath = 'ansible'
     try {
@@ -859,8 +857,8 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
-                    Integer timeOut = OrgAlxGlobals.waitSshHostUpDownTimeout,
-                    String jenkinsHomeFolder = OrgAlxGlobals.jenkinsUserDefaultHomeFolder) {
+                    Integer timeOut = OrgAlxGlobals.WAIT_SSH_HOST_UP_DOWN_TIMEOUT,
+                    String jenkinsHomeFolder = OrgAlxGlobals.JENKINS_USER_DEFAULT_HOME_FOLDER) {
     try {
         sh String.format("ssh-keygen -f '%s/.ssh/known_hosts' -R %s", jenkinsHomeFolder, sshHostname)
         timeout(timeOut) {
