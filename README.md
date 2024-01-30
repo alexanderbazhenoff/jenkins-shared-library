@@ -8,7 +8,7 @@ Some common things that makes writing Jenkins pipelines easier.
 [`official documentation`](https://www.jenkins.io/doc/book/pipeline/shared-libraries/#global-shared-libraries).
 2. Write your Jenkins pipeline like:
 
-    ### To use library from [`src/org`](src/org/alx)
+    **To use library from** [`src/org`](src/org/alx):
 
     ```groovy
     #!/usr/bin/env groovy
@@ -27,7 +27,7 @@ Some common things that makes writing Jenkins pipelines easier.
 
     To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable.
 
-    ### To use library from [`vars`](vars)
+    **To use library from** [`vars`](vars):
 
     ```groovy
     @Library('jenkins-shared-library') _

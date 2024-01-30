@@ -221,7 +221,7 @@ List mapConfigToJenkinsJobParam(Map mapConfig) {
             jobParams += itemKeyToJobParam(it.key.toString(), it.value)
         }
     }
-    return jobParams
+    jobParams
 }
 
 /**
@@ -459,9 +459,10 @@ static Map flattenNestedMap(Map sourceMap) {
 String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword, Boolean returnStatus,
                      Boolean returnStdout, String sshCommand) {
     writeFile file: 'pass.txt', text: sshPassword
+    // groovylint-disable-next-line UnnecessaryToString
     String bashResult = sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s '%s'",
             sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout)
-            .toString() // groovylint-disable-line UnnecessaryToString
+            .toString()
     sh 'rm -f pass.txt'
     bashResult
 }
@@ -512,7 +513,8 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
     folderToMapResults.valuestore_path = path
     try {
         dir(path) {
-            List dirList = sh(returnStdout: true, script: 'for I in $(ls -d */); do echo ${I%%/}; done').trim()
+            // groovylint-disable-next-line GStringExpressionWithinString
+            List dirList = sh(returnStdout: true, script: 'for i in $(ls -d */); do echo ${i%%/}; done').trim()
                     .split('\n').toList()
             if (dirList)
                 dirList.findAll { !it.matches(excludeRegexp) }.each {
@@ -552,7 +554,7 @@ static List getVariablesMentioningFromString(String text) {
  */
 Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String noDataBindingString) {
     Map messageMap = flattenNestedMap(params)
-    ArrayList messageTemplateVariablesList = getVariablesMentioningFromString(messageMap.toString())
+    List messageTemplateVariablesList = getVariablesMentioningFromString(messageMap.toString())
     Map resultsBinding = [:]
     String bindingLogMessage = 'replaceVariablesInMapItemsWithValues | Binding log:\n'
     messageTemplateVariablesList.each {
@@ -573,12 +575,11 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
     String templatedLogMessage = 'replaceVariablesInMapItemsWithValues | templated:\n'
     messageMap.each {
         String templatedValue = new StreamingTemplateEngine().createTemplate(it.value.toString()).make(resultsBinding)
-                .toString()
         messageMap[it.key] = templatedValue
         templatedLogMessage += String.format('\'%s\': %s\n', messageMap[it.key], templatedValue)
     }
     outMsg(0, String.format('%s\n\n', templatedLogMessage))
-    return messageMap
+    messageMap
 }
 
 /**
@@ -590,7 +591,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
  */
 Boolean saveMapToPropertiesFile(String path, Map values) {
     try {
-        writeFile(file: path, text: values.collect {String.format("%s=%s", it.key, it.value) }.join('\n'))
+        writeFile(file: path, text: values.collect {String.format('%s=%s', it.key, it.value) }.join('\n'))
         return true
     } catch (Exception err) {
         outMsg(3, String.format('Unable to save \'%s\' with values: \n%s\nbecause of:\n%s', path,
@@ -614,12 +615,12 @@ Boolean checkRequiredVariables(List variableList, List variableValueList, Boolea
     for (int i = 0; i < variableList.size(); i++) {
         if (!variableValueList[i]) {
             errorsFound = true
-            outMsg(3, String.format("%s is undefined for current job run", variableList[i]))
+            outMsg(3, String.format('%s is undefined for current job run', variableList[i]))
         }
     }
     if (errorsFound.toBoolean() && stopOnError.toBoolean())
         error 'Current job run terminated. Please specify the parameters listed above and run again.'
-    return errorsFound
+    errorsFound
 }
 
 /**
@@ -629,8 +630,8 @@ Boolean checkRequiredVariables(List variableList, List variableValueList, Boolea
  * @return - list with filename and extension.
  */
 @NonCPS
-static getFilenameExtension(String filenameWithExtension) {
-    return [FilenameUtils.removeExtension(filenameWithExtension), FilenameUtils.getExtension(filenameWithExtension)]
+static List getFilenameExtension(String filenameWithExtension) {
+    [FilenameUtils.removeExtension(filenameWithExtension), FilenameUtils.getExtension(filenameWithExtension)]
 }
 
 /**
@@ -644,7 +645,7 @@ Boolean extractArchive(String filenameWithExtension) {
     outMsg(1, String.format('Got filename: %s, extension: %s', filename, extension))
     String extractScript = String.format('tar -xvf %s', filenameWithExtension)
     if (extension == 'zip') extractScript = String.format('unzip %s', filenameWithExtension)
-    return (sh(returnStdout: true, returnStatus: true, script: extractScript) == 0)
+    (sh(returnStdout: true, returnStatus: true, script: extractScript) == 0)
 }
 
 /**
@@ -688,12 +689,12 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
             ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
                     script: String.format('''ansible-galaxy collection build 
                             ansible-galaxy collection install $(ls -1 | grep "%s" | grep ".tar.gz") -f''',
-                            it.replace('.', '-'))) != 0) ? false : ansibleGalaxyInstallOk
+                            it.replace('.', '-'))) == 0) ? ansibleGalaxyInstallOk : false
             if (!ansibleGalaxyInstallOk)
                 outMsg(3, String.format('There was an error building and installing %s ansible collection.', it))
         }
     }
-    return ansibleGalaxyInstallOk
+    ansibleGalaxyInstallOk
 }
 
 /**
@@ -740,6 +741,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
                     String.format(' collection(s)', ansibleCollections.toString()))
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
+            // groovylint-disable-next-line DuplicateMapLiteral
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                 ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
                         colorized: true, extras: ansibleExtras)
@@ -750,8 +752,8 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         runAnsibleState = false
     } finally {
         sh String.format('rm -f %s/inventory.ini || true', ansiblePlaybookPath)
-        return runAnsibleState
     }
+    runAnsibleState
 }
 
 /**
@@ -759,12 +761,12 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
  *
  * @param hostsToClean - IPs, FQCNs or dns names list to clean.
  */
-def cleanSshHostsFingerprints(ArrayList hostsToClean) {
+def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
-        ArrayList items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
+        List items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
                 String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).split('\n').toList()
         items.each { host ->
-            if (host?.trim()) sh String.format('ssh-keygen -f "${HOME}/.ssh/known_hosts" -R %s', host)
+            if (host?.trim()) sh String.format('ssh-keygen -f "%s/.ssh/known_hosts" -R %s', env.HOME, host)
         }
     }
 }
@@ -784,7 +786,7 @@ def cleanSshHostsFingerprints(ArrayList hostsToClean) {
  * @param printableJobParams - (optional) just printable
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
-def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
+def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
                      String dryRunEnvVariableName = 'DRY_RUN', ArrayList printableJobParams = []) {
     if (runJobWithDryRunParam)
@@ -795,11 +797,10 @@ def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolea
                 runJobWithDryRunParam, readableJobParams(printableJobParams.size() ? printableJobParams : jobParams)))
     if (!dryRun || runJobWithDryRunParam) {
         return build(job: jobName, parameters: jobParams, propagate: propagateErrors, wait: waitForComplete)
-    } else {
-        outMsg(2, String.format("%s '%s' %s%s), no job results.", 'Dry-run mode. Running', jobName,
-                'was skipped (runJobWithDryRunParam=', runJobWithDryRunParam))
-        return null
     }
+    outMsg(2, String.format("%s '%s' %s%s), no job results.", 'Dry-run mode. Running', jobName,
+            'was skipped (runJobWithDryRunParam=', runJobWithDryRunParam))
+    return null
 }
 
 /** Serialize environment variables into map
@@ -807,10 +808,10 @@ def dryRunJenkinsJob(String jobName, ArrayList jobParams, Boolean dryRun, Boolea
  * @param envVars - environment variables.
  * @return - map with environment variables.
  */
-static envVarsToMap(envVars) {
+static Map envVarsToMap(envVars) {
     Map envVarsMap = [:]
     envVars.getEnvironment().each { name, value -> envVarsMap.put(name, value) }
-    return envVarsMap
+    envVarsMap
 }
 
 /**
@@ -820,10 +821,10 @@ static envVarsToMap(envVars) {
  * @param regex - regex string.
  * @return - result map.
  */
-static regexMapKeyNames(Map sourceMap, String regex) {
+static Map regexMapKeyNames(Map sourceMap, String regex) {
     Map resultMap = [:]
     sourceMap.each { name, value -> resultMap.put(name.replaceAll(regex, ''), value) }
-    return resultMap
+    resultMap
 }
 
 /** Fix data typing of map values.
@@ -832,7 +833,7 @@ static regexMapKeyNames(Map sourceMap, String regex) {
  * @param sourceMap - source map.
  * @return - map with typed values.
  */
-static fixMapValuesDataTyping(Map sourceMap) {
+static Map fixMapValuesDataTyping(Map sourceMap) {
     Map resultMap = [:]
     sourceMap.each { name, value ->
         if (value instanceof String && (value == 'true' || value == 'false')) {
@@ -843,7 +844,7 @@ static fixMapValuesDataTyping(Map sourceMap) {
             resultMap.put(name, value)
         }
     }
-    return resultMap
+    resultMap
 }
 
 /**
@@ -876,7 +877,7 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
         outMsg(3, String.format('Waiting %s ssh %s failed.', sshHostname, (sshHostUp ? 'up' : 'down')))
         return false
     }
-    return true
+    true
 }
 
 /**
@@ -898,10 +899,11 @@ String runBashScp(String sshHostname, String sshUsername, String sshPassword, St
     String scpPathArgs = String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
     if (scpDirection)
         scpPathArgs = String.format('%s %s@%s:%s', sourcePath, sshUsername, sshHostname, destinationPath)
+    // groovylint-disable-next-line UnnecessaryToString
     String bashResulting = sh(script: String.format("sshpass -f pass.txt scp -ro 'StrictHostKeyChecking no' %s",
             scpPathArgs), returnStatus: returnStatus, returnStdout: returnStdout).toString()
     sh 'rm -f pass.txt'
-    return bashResulting
+    bashResulting
 }
 
 /**
@@ -911,7 +913,7 @@ String runBashScp(String sshHostname, String sshUsername, String sshPassword, St
  */
 def interruptPipelineOk(Integer sleepSeconds = 2) {
     currentBuild.build().getExecutor().interrupt(Result.SUCCESS)
-    sleep(time: sleepSeconds, unit: "SECONDS")
+    sleep(time: sleepSeconds, unit: 'SECONDS')
 }
 
 /**
@@ -921,18 +923,18 @@ def interruptPipelineOk(Integer sleepSeconds = 2) {
  * @param filterByLabel - when true filter by node label, otherwise filter by node name.
  * @return - list of nodes.
  */
-ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false) {
+List getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false) {
     Object jenkinsComputers = jenkins.model.Jenkins.get().computers
     if (!filterMask.trim())
         return jenkinsComputers.collect { it.node.selfLabel.name }
     if (!filterByLabel)
         return jenkinsComputers.findAll { it.node.selfLabel.name.contains(filterMask) }.collect {
             it.node.selfLabel.name }
-    ArrayList nodes = []
+    List nodes = []
     jenkinsComputers.each {
         if (it.node.labelString.contains(filterMask)) nodes.add(it.node.selfLabel.name)
     }
-    return nodes
+    nodes
 }
 
 /**
@@ -944,9 +946,9 @@ ArrayList getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false)
  * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
  * @return - list of [enabled options list, descriptions of enabled options list].
  */
-static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
-    ArrayList options = []
-    ArrayList descriptions = []
+static List makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
+    List options = []
+    List descriptions = []
     optionsMap.each {
         if (it.value.get('state')) {
             options.add(it.key)
@@ -954,7 +956,7 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
                 descriptions.add(String.format(formatTemplate, it.key, it.value.description))
         }
     }
-    return [options, descriptions]
+    [options, descriptions]
 }
 
 /**
@@ -966,8 +968,8 @@ static makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s
  * @return - string of failed states list.
  */
 @NonCPS
-static grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
-    return (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
+static String grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
+    (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
             .grep { it.contains(grepString) }.join('\n') : ''
 }
 
