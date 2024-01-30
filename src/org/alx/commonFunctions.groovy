@@ -35,35 +35,37 @@ import hudson.model.Result
  * Global variables for library file CommonFunctions.groovy
  */
 class OrgAlxGlobals {
+
     /**
      * Provide Git credentials ID for git authorisation.
      */
-    public static String GitCredentialsID = ''
+    public static String gitCredentialsId = ''
 
     /**
      * Provide default verbose level for send message to mattermost function.
      */
-    public static Integer MattermostMessageDefaultVerboseLevel = 1
+    public static Integer mattermostMessageDefaultVerboseLevel = 1
 
     /**
      * Provide default length of mattermost message.
      */
-    public static Integer MattermostMessageDefaultLength = 4000
+    public static Integer mattermostMessageDefaultLength = 4000
 
     /**
      * Provide default time-out for wait ssh host up or down (in minutes).
      */
-    public static Integer WaitSshHostUpDownTimeout = 1
+    public static Integer waitSshHostUpDownTimeout = 1
 
     /**
      * Provide default path of home folder for jenkins user.
      */
-    public static String JenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+    public static String jenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
 
     /**
      * Provide default ansible installation predefined in jenkins Global Configuration Tool.
      */
-    public static String AnsibleInstallationName = 'home_local_bin_ansible'
+    public static String ansibleInstallationName = 'home_local_bin_ansible'
+
 }
 
 
@@ -83,8 +85,8 @@ class OrgAlxGlobals {
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '',
                             Boolean printErrorMessage = true) {
     Integer eventNumber = !state && printErrorMessage ? 3 : 0
-    if (!jobUrl?.trim()) jobUrl = ''
-    states[name.replaceAll(' ', '')] = [name: name, state: state, url: jobUrl]
+    String printableJobUrl = !jobUrl?.trim() ? '' : jobUrl
+    states[name.replaceAll(' ', '')] = [name: name, state: state, url: printableJobUrl]
     if (logName?.trim()) {
         String statesTextTable = ''
         states.each { key, value ->
@@ -97,7 +99,7 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
         archiveArtifacts allowEmptyArchive: true, artifacts: logName
     }
     outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
-            .replace('true', 'SUCCESS'), jobUrl))
+            .replace('true', 'SUCCESS'), printableJobUrl))
     return states
 }
 
@@ -301,7 +303,7 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
  * @return - true when http OK 200.
  */
 Boolean sendMattermostChannelSingleMessage(String url, String text,
-                                           Integer verboseLevel = OrgAlxGlobals.MattermostMessageDefaultVerboseLevel) {
+                                           Integer verboseLevel = OrgAlxGlobals.mattermostMessageDefaultVerboseLevel) {
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
@@ -331,7 +333,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text,
  * @return - true when http OK 200.
  */
 Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
-                              Integer messageLength = OrgAlxGlobals.MattermostMessageDefaultLength) {
+                              Integer messageLength = OrgAlxGlobals.mattermostMessageDefaultLength) {
     Boolean overallSendMessageState = true
     if (text.length() >= messageLength) {
         ArrayList splitMessages = []
@@ -658,7 +660,7 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param cleanBeforeCloning - cleanup directory before cloning.
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID, Boolean cleanBeforeCloning = true) {
+                        String gitCredentialsId = OrgAlxGlobals.gitCredentialsId, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
         if (cleanBeforeCloning) sh 'rm -rf ./*'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
@@ -679,7 +681,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  */
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
-                                        String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+                                        String gitCredentialsId = OrgAlxGlobals.gitCredentialsId) {
     Boolean ansibleGalaxyInstallOk = true
     if (ansibleGitUrl.trim())
         cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanupBeforeAnsibleClone)
@@ -718,8 +720,8 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
-                   String ansibleInstallation = OrgAlxGlobals.AnsibleInstallationName,
-                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GitCredentialsID) {
+                   String ansibleInstallation = OrgAlxGlobals.ansibleInstallationName,
+                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.gitCredentialsId) {
     Boolean runAnsibleState = true
     String ansiblePlaybookPath = 'ansible'
     try {
@@ -857,8 +859,8 @@ static fixMapValuesDataTyping(Map sourceMap) {
  * @return - true when success.
  */
 Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, Boolean sshHostUp = true,
-                    Integer timeOut = OrgAlxGlobals.WaitSshHostUpDownTimeout,
-                    String jenkinsHomeFolder = OrgAlxGlobals.JenkinsUserDefaultHomeFolder) {
+                    Integer timeOut = OrgAlxGlobals.waitSshHostUpDownTimeout,
+                    String jenkinsHomeFolder = OrgAlxGlobals.jenkinsUserDefaultHomeFolder) {
     try {
         sh String.format("ssh-keygen -f '%s/.ssh/known_hosts' -R %s", jenkinsHomeFolder, sshHostname)
         timeout(timeOut) {

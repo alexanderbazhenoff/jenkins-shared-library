@@ -17,15 +17,16 @@ import hudson.model.FileParameterValue
  * It provides a unstashParameter that saves file parameter to a workspace.
  *
  * @param name - parameter name,
- * @param fname - (optional) input filename.
+ * @param inputFilename - (optional) input filename.
  * @return - stashed filename.
  */
-def call(String name, String fname = null) {
+def call(String name, String inputFilename = null) {
     def paramsAction = currentBuild.rawBuild.getAction(ParametersAction.class)
     if (paramsAction) {
         for (param in paramsAction.getParameters()) {
             if (param.getName().equals(name)) {
-                if (! (param instanceof FileParameterValue)) error String.format('Not a file parameter: %s', name)
+                if (!(param instanceof FileParameterValue)) // groovylint-disable-line Instanceof
+                    error String.format('Not a file parameter: %s', name)
                 if (!param.getOriginalFileName()) error 'File was not uploaded'
                 if (!env.NODE_NAME) error 'No node in current context'
                 if (!env.WORKSPACE) error 'No workspace in current context'
@@ -35,7 +36,7 @@ def call(String name, String fname = null) {
                     workspace = new FilePath(Jenkins.getInstance().getComputer(env.NODE_NAME).getChannel(),
                             env.WORKSPACE)
                 }
-                filename = fname == null ? param.getOriginalFileName() : fname
+                filename = inputFilename == null ? param.getOriginalFileName() : inputFilename
                 file = workspace.child(filename)
                 destinationFolder = file.getParent()
                 destinationFolder.mkdirs()
