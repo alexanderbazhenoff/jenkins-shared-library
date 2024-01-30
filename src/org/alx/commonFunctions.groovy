@@ -39,7 +39,7 @@ class OrgAlxGlobals {
     /**
      * Provide Git credentials ID for git authorisation.
      */
-    public static final String gitCredentialsId = ''
+    public static final String GIT_CREDENTIALS_ID = ''
 
     /**
      * Provide default verbose level for send message to mattermost function.
@@ -85,7 +85,7 @@ class OrgAlxGlobals {
 Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '',
                             Boolean printErrorMessage = true) {
     Integer eventNumber = !state && printErrorMessage ? 3 : 0
-    String printableJobUrl = !jobUrl?.trim() ? '' : jobUrl
+    String printableJobUrl = jobUrl?.trim() ? jobUrl : ''
     states[name.replaceAll(' ', '')] = [name: name, state: state, url: printableJobUrl]
     if (logName?.trim()) {
         String statesTextTable = ''
@@ -291,7 +291,7 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
     } finally {
         httpClient.getConnectionManager().shutdown()
     }
-    return status
+    status
 }
 
 /**
@@ -660,7 +660,7 @@ Boolean extractArchive(String filenameWithExtension) {
  * @param cleanBeforeCloning - cleanup directory before cloning.
  */
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
-                        String gitCredentialsId = OrgAlxGlobals.gitCredentialsId, Boolean cleanBeforeCloning = true) {
+                        String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
         if (cleanBeforeCloning) sh 'rm -rf ./*'
         git(branch: projectGitlabBranch, credentialsId: gitCredentialsId, url: projectGitUrl)
@@ -681,7 +681,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  */
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
-                                        String gitCredentialsId = OrgAlxGlobals.gitCredentialsId) {
+                                        String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
     Boolean ansibleGalaxyInstallOk = true
     if (ansibleGitUrl.trim())
         cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanupBeforeAnsibleClone)
@@ -721,7 +721,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = OrgAlxGlobals.ansibleInstallationName,
-                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.gitCredentialsId) {
+                   Boolean cleanupBeforeAnsibleClone = true, String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
     Boolean runAnsibleState = true
     String ansiblePlaybookPath = 'ansible'
     try {
