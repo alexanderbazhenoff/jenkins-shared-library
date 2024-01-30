@@ -2,6 +2,8 @@
 
 Some common things that makes writing Jenkins pipelines easier.
 
+![lint](https://github.com/alexanderbazhenoff/jenkins-shared-library/actions/workflows/lint.yml/badge.svg?branch=main)
+
 ## Usage
 
 1. Connect this repository to your Jenkins shared library as described in
