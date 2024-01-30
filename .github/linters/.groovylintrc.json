@@ -54,6 +54,9 @@
     "DuplicateStringLiteral": {
       "enabled": false
     },
+    "DuplicateNumberLiteral": {
+      "enabled": false
+    },
     "UnnecessaryReturnKeyword": "error"
   }
 }

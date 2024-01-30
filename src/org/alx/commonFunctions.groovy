@@ -100,7 +100,7 @@ Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUr
     }
     outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
             .replace('true', 'SUCCESS'), printableJobUrl))
-    return states
+    states
 }
 
 /**
@@ -221,7 +221,7 @@ List mapConfigToJenkinsJobParam(Map mapConfig) {
             jobParams += itemKeyToJobParam(it.key.toString(), it.value)
         }
     }
-    jobParams
+    return jobParams
 }
 
 /**
@@ -235,7 +235,7 @@ List mapConfigToJenkinsJobParam(Map mapConfig) {
 def outMsg(Integer eventNumber, String text, Object envVariables = env) {
     if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-            ArrayList eventTypes = [
+            List eventTypes = [
                     '\033[0;34mDEBUG\033[0m',
                     '\033[0;32mINFO\033[0m',
                     '\033[0;33mWARNING\033[0m',
@@ -318,7 +318,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
     }
     println String.format('Sending mattermost: %s', (mattermostResponse.get('response_content') ?
             mattermostResponse.response_content : '<null or empty>'))
-    return false
+    false
 }
 
 /**
@@ -362,7 +362,7 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
         }
         return overallSendMessageState
     }
-    return sendMattermostChannelSingleMessage(url, text, verboseMsg)
+    sendMattermostChannelSingleMessage(url, text, verboseMsg)
 }
 
 /**
@@ -373,7 +373,7 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
  */
 static String passwordGenerator(Integer passwordLength) {
     String charset = (('A'..'Z') + ('a'..'z') + ('0'..'9') + ('+-*#$@!=%') - ('0O1Il')).join('')
-    return (new RandomStringUtils().random(passwordLength, charset.toCharArray()))
+    new RandomStringUtils().random(passwordLength, charset.toCharArray())
 }
 
 /**
@@ -383,7 +383,7 @@ static String passwordGenerator(Integer passwordLength) {
  * @return - human-readable string of map.
  */
 static String readableMap(Map content) {
-    return (new JsonBuilder(content).toPrettyString())
+    new JsonBuilder(content).toPrettyString()
 }
 
 /**
@@ -398,7 +398,7 @@ static Map parseJson(String txt) {
     new JsonSlurper().parseText(txt).each { prop ->
         map[prop.key] = prop.value
     }
-    return map
+    map
 }
 
 /**
@@ -408,8 +408,8 @@ static Map parseJson(String txt) {
  * @return - transliterated text.
  */
 String transliterateString(String text) {
-    return sh (returnStdout: true, script: String.format('python3 -c "import sys; from transliterate import ' +
-            '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim()
+    sh(returnStdout: true, script: String.format('python3 -c "import sys; from transliterate import ' +
+        '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim()
 }
 
 /**
@@ -421,7 +421,7 @@ String transliterateString(String text) {
  * @return - LazyMap.
  */
 static Map yamlToLazyMap(def yaml) {
-    return parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
+    parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
 }
 
 /**
@@ -430,7 +430,7 @@ static Map yamlToLazyMap(def yaml) {
  * @param sourceMap - source map,
  * @return - flatten map.
  */
-static flattenNestedMap(Map sourceMap) {
+static Map flattenNestedMap(Map sourceMap) {
     Map resultMap = [:]
     sourceMap.each {
         String paramPrefix = ''
@@ -442,7 +442,7 @@ static flattenNestedMap(Map sourceMap) {
         }
     }
     println String.format('flatten nested map results: \n%s', resultMap)
-    return resultMap
+    resultMap
 }
 
 /**
@@ -460,9 +460,10 @@ String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword,
                      Boolean returnStdout, String sshCommand) {
     writeFile file: 'pass.txt', text: sshPassword
     String bashResult = sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s '%s'",
-            sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout).toString()
+            sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout)
+            .toString() // groovylint-disable-line UnnecessaryToString
     sh 'rm -f pass.txt'
-    return bashResult
+    bashResult
 }
 
 
@@ -492,7 +493,7 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
     } catch (Exception err) {
         outMsg(3, String.format('Unable to read files to Map from \'%s\': \n%s', path, readableError(err)))
     }
-    return fileToMapResults
+    fileToMapResults
 }
 
 
@@ -511,7 +512,7 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
     folderToMapResults.valuestore_path = path
     try {
         dir(path) {
-            List dirList = sh(returnStdout: true, script: 'for i in $(ls -d */); do echo ${i%%/}; done').trim()
+            List dirList = sh(returnStdout: true, script: 'for I in $(ls -d */); do echo ${I%%/}; done').trim()
                     .split('\n').toList()
             if (dirList)
                 dirList.findAll { !it.matches(excludeRegexp) }.each {
@@ -523,7 +524,7 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
     } catch (Exception err) {
         outMsg(3, String.format('Unable to read \'%s\' directory to Map.\n%s', path, readableError(err)))
     }
-    return folderToMapResults
+    folderToMapResults
 }
 
 /**
@@ -532,8 +533,8 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
  * @param text - text to scan,
  * @return - variables list.
  */
-static ArrayList getVariablesMentioningFromString(String text) {
-    return text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
+static List getVariablesMentioningFromString(String text) {
+    text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
 }
 
 /**
