@@ -678,6 +678,7 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  *                             should be placed inside 'ansible_collections' folder as ansible-galaxy standards.
  * @return - true when success.
  */
+// groovylint-disable-next-line UnusedMethodParameter
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
@@ -687,7 +688,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
     ansibleCollections.each {
         dir(String.format('ansible/ansible_collections/%s', it.replace('.', '/'))) {
             ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
-                    script: String.format('''ansible-galaxy collection build 
+                    script: String.format('''ansible-galaxy collection build
                             ansible-galaxy collection install $(ls -1 | grep "%s" | grep ".tar.gz") -f''',
                             it.replace('.', '-'))) == 0) ? ansibleGalaxyInstallOk : false
             if (!ansibleGalaxyInstallOk)
@@ -717,6 +718,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
  * @return - success (true when ok).
  */
+// groovylint-disable-next-line UnusedMethodParameter
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = OrgAlxGlobals.ANSIBLE_INSTALLATION_NAME,
