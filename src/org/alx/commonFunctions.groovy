@@ -39,32 +39,32 @@ class OrgAlxGlobals {
     /**
      * Provide Git credentials ID for git authorisation.
      */
-    public static String gitCredentialsId = ''
+    public static final String gitCredentialsId = ''
 
     /**
      * Provide default verbose level for send message to mattermost function.
      */
-    public static Integer mattermostMessageDefaultVerboseLevel = 1
+    public static final Integer mattermostMessageDefaultVerboseLevel = 1
 
     /**
      * Provide default length of mattermost message.
      */
-    public static Integer mattermostMessageDefaultLength = 4000
+    public static final Integer mattermostMessageDefaultLength = 4000
 
     /**
      * Provide default time-out for wait ssh host up or down (in minutes).
      */
-    public static Integer waitSshHostUpDownTimeout = 1
+    public static final Integer waitSshHostUpDownTimeout = 1
 
     /**
      * Provide default path of home folder for jenkins user.
      */
-    public static String jenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
+    public static final String jenkinsUserDefaultHomeFolder = '/var/lib/jenkins'
 
     /**
      * Provide default ansible installation predefined in jenkins Global Configuration Tool.
      */
-    public static String ansibleInstallationName = 'home_local_bin_ansible'
+    public static final String ansibleInstallationName = 'home_local_bin_ansible'
 
 }
 

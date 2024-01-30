@@ -36,6 +36,9 @@
     "CatchException": {
       "enabled": false
     },
+    "Instanceof": {
+      "enabled": false
+    },
     "convention.CompileStatic": {
       "enabled": false
     },
