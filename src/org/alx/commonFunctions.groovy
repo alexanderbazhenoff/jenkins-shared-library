@@ -740,7 +740,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             writeFile file: 'execute.yml', text: ansiblePlaybookText
             String ansibleMode = String.format('ansible%s', ansiblePlaybookPath == 'ansible' ?:
                     String.format(' collection(s)', ansibleCollections.toString()))
-            outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ("-" * 32)))
+            outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ('-' * 32)))
             // groovylint-disable-next-line DuplicateMapLiteral
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
                 ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
@@ -788,7 +788,7 @@ def cleanSshHostsFingerprints(List hostsToClean) {
  */
 def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
-                     String dryRunEnvVariableName = 'DRY_RUN', ArrayList printableJobParams = []) {
+                     String dryRunEnvVariableName = 'DRY_RUN', List printableJobParams = []) {
     if (runJobWithDryRunParam)
         jobParams += [booleanParam(name: dryRunEnvVariableName, value: envVariables.getEnvironment()
                 .get(dryRunEnvVariableName)?.toBoolean())]
@@ -800,7 +800,7 @@ def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean run
     }
     outMsg(2, String.format("%s '%s' %s%s), no job results.", 'Dry-run mode. Running', jobName,
             'was skipped (runJobWithDryRunParam=', runJobWithDryRunParam))
-    return null
+    null
 }
 
 /** Serialize environment variables into map
@@ -868,8 +868,7 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
                 script {
                     Boolean r = (runBashViaSsh(sshHostname, sshUsername, sshPassword, true, false,
                             'exit').toInteger() == 0)
-                    if (!sshHostUp) r = !r
-                    return r
+                    sshHostUp ? !r : r
                 }
             }
         }
