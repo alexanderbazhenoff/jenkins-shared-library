@@ -672,10 +672,10 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  * @param ansibleGitUrl - Git URL of ansible project. Leave empty if your ansible collection already cloned to ./ansible
  *                        folder.
  * @param ansibleGitBranch - Git branch of ansible project to clone.
- * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible clone.
- * @param gitCredentialsId - CredentialsID for git authorisation on ansible project clone.
  * @param ansibleCollections - List of ansible-galaxy collections to install, e.g: 'namespace.collection_name' that
  *                             should be placed inside 'ansible_collections' folder as ansible-galaxy standards.
+ * @param cleanBeforeClone - Clean-up folder before ansible clone.
+ * @param gitCredentialsId - CredentialsID for git authorisation on ansible project clone.
  * @return - true when success.
  */
 // groovylint-disable-next-line UnusedMethodParameter
@@ -684,7 +684,7 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
                                         String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
     Boolean ansibleGalaxyInstallOk = true
     if (ansibleGitUrl.trim())
-        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanupBeforeAnsibleClone)
+        cloneGitToFolder(ansibleGitUrl, ansibleGitBranch, 'ansible', gitCredentialsId, cleanBeforeClone)
     ansibleCollections.each {
         dir(String.format('ansible/ansible_collections/%s', it.replace('.', '/'))) {
             ansibleGalaxyInstallOk = (sh(returnStdout: true, returnStatus: true,
@@ -714,8 +714,9 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *                             the backward capability.
  * @param ansibleInstallation - name of the ansible installation predefined in jenkins Global Configuration Tool.
  *                              Check https://issues.jenkins.io/browse/JENKINS-67209 for details.
- * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible git clone.
+ * @param cleanBeforeClone - Clean-up folder before ansible git clone.
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
+ * @param directAnsibleRun - when true, run ansible-playbook directly. Otherwise, run ansible plugin.
  * @return - success (true when ok).
  */
 // groovylint-disable-next-line UnusedMethodParameter
@@ -730,7 +731,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
         if (ansibleCollections) {
             if (ansibleGitUrl?.trim()) {
                 runAnsibleState = installAnsibleGalaxyCollections(ansibleGitUrl, ansibleGitBranch, ansibleCollections,
-                        cleanupBeforeAnsibleClone, gitCredentialsId)
+                        cleanBeforeClone, gitCredentialsId)
                 if (!runAnsibleState) return false
             }
 
@@ -745,8 +746,14 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ('-' * 32)))
             // groovylint-disable-next-line DuplicateMapLiteral
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
-                        colorized: true, extras: ansibleExtras)
+                if (directAnsibleRun) {
+                    sh String.format('%s %s ansible-playbook %s -i %s %s', 'ANSIBLE_LOAD_CALLBACK_PLUGINS=1',
+                            'ANSIBLE_STDOUT_CALLBACK=yaml ANSIBLE_FORCE_COLOR=true', 'execute.yml', 'inventory.ini',
+                            ansibleExtras)
+                } else {
+                    ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini',
+                            installation: ansibleInstallation, colorized: true, extras: ansibleExtras)
+                }
             }
         }
     } catch (Exception err) {
