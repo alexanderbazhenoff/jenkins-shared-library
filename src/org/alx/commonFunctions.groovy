@@ -70,40 +70,6 @@ class OrgAlxGlobals {
 
 
 /**
- * Add current step (or phase) state to state map and (optional) save steps states with URLs to log file.
- *
- * @param states - map with pipeline steps (or phases) names and states.
- * @param name - name of the current step (or phase).
- * @param state - current state: false|true.
- * @param jobUrl - url of the last job run.
- * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
- * @param printErrorMessage - true to print error message on status error, otherwise print only debug messages.
- * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
- *           structure of this map should be: key is the name with spaces cut, value should be a map of:
- *           [name: name, state: state, url: url].
- */
-Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '',
-                            Boolean printErrorMessage = true) {
-    Integer eventNumber = !state && printErrorMessage ? 3 : 0
-    String printableJobUrl = jobUrl?.trim() ? jobUrl : ''
-    states[name.replaceAll(' ', '')] = [name: name, state: state, url: printableJobUrl]
-    if (logName?.trim()) {
-        String statesTextTable = ''
-        states.each { key, value ->
-            if (value instanceof Map) {
-                statesTextTable += String.format('%s %s %s\n, ', value.name.padLeft(16), value.state.toString().
-                        replace('false', '[FAILED] ').replace('true', '[SUCCESS]'), value.url.padLeft(2))
-            }
-        }
-        writeFile file: logName, text: statesTextTable
-        archiveArtifacts allowEmptyArchive: true, artifacts: logName
-    }
-    outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
-            .replace('true', 'SUCCESS'), printableJobUrl))
-    states
-}
-
-/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
@@ -115,64 +81,6 @@ static String readableJobParams(List params) {
 }
 
 /**
- * Convert map to jenkins job params.
- *
- * @param config - config input in the next keys format:
- *
- *                 name: config name (or just visible name);
- *                 enabled: true|false (just the way to enable/disable without parameters removal);
- *                 jobname: jenkins job/pipeline name to execute (will be skipped if wasn't set on checkName=false,
- *                 or will return an empty arrayList on checkName=true);
- *
- *                 Other key-value parameters in this map will be converted to pipeline parameters, where:
- *
- *                 key - pipeline/job parameter name to pass downstream pipeline/job;
- *                 value - pipeline/job parameter value: Boolean will be boolean, List will pass as comma separated
- *                 string, other types will be converted to string.
- *
- * @param checkName - check value of 'name' key exists in map, otherwise ignore.
- * @return - jenkins job params arrayList.
- */
-List mapToJenkinsJobParams(Map config, Boolean checkName = true) {
-    String configName
-    List jobParams = []
-    try {
-        if (config.get('name')) {
-            configName = config.name
-        } else {
-            if (checkName) {
-                outMsg(3, '\'name\' param not found, please set visible name.')
-                return jobParams
-            } else {
-                configName = '<undefined_config_name>'
-            }
-        }
-        if (config.get('enabled') && config.get('jobname')) {
-            if (config.enabled && config.jobname?.trim()) {
-                outMsg(0, String.format('Processing current %s config: \n%s', configName,
-                        (new JsonBuilder(config).toPrettyString())))
-                jobParams = mapConfigToJenkinsJobParam(config.findAll {
-                    !it.key.startsWith('msg') && it.key != 'name' && it.key != 'enabled' && it.key != 'jobname'
-                })
-                outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
-                        readableJobParams(jobParams)))
-            } else if (config.enabled && !config.jobname?.trim()) {
-                outMsg(2, String.format('%s %s %s', 'Unable to perform jenkins job parameters conversion for',
-                        configName, 'jobname in this config wasn\'t set. Skipping job run for this config.'))
-            } else if (!config.enabled) {
-                outMsg(1, String.format('%s config disabled, skipping.', configName))
-            }
-        } else {
-            outMsg(3, String.format('%s %s %s', "Unable to find 'enabled' and/or 'jobname' param(s) in",
-                    configName, 'config. Please check and try again. Config was skipped.'))
-        }
-    } catch (Exception err) {
-        outMsg(3, String.format('Converting yaml config to jenkins job params error: %s', readableError(err)))
-    }
-    jobParams
-}
-
-/**
  * More readable exceptions with line numbers.
  *
  * @param error - Exception error.
@@ -181,68 +89,177 @@ static String readableError(Throwable error) {
     String.format('Line %s: %s', error.stackTrace.head().lineNumber, StackTraceUtils.sanitize(error))
 }
 
+
 /**
- * Parse map item and return them as arraylist for jenkins pipeline job param.
+ * Password generator.
  *
- * @param key - item key name.
- * @param value - item key value.
- * @param type - (optional) item parameter type: string, choice, boolean, text, password or undefined to autodetect.
- * @param upperCaseKeyName - (optional) true when convert parameters to uppercase is required.
- * @param params - (optional) other parameters to add to them.
- * @return - array list for jenkins pipeline job parameters.
+ * @param passwordLength - number of symbols to be generated.
+ * @return - password.
  */
-List itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true, List params = []) {
-    String keyName = upperCaseKeyName ? key.toUpperCase() : key
-    params += value instanceof Boolean || type == 'boolean' ? [booleanParam(name: keyName, value: value)] : []
-    params += value instanceof ArrayList ? string(name: keyName, value: value.toString().replaceAll(',', '')) : []
-    params += value instanceof String && (type == 'string' || !type?.trim()) ?
-            [string(name: keyName, value: value)] : []
-    params += value instanceof String && type == 'text' ? [text(name: keyName, value: value)] : []
-    params += value instanceof String && type == 'password' ? [password(name: keyName, value: value)] : []
-    params += value instanceof Integer || value instanceof Float || value instanceof BigInteger ?
-            [string(name: keyName, value: value.toString())] : []
-    params
+static String passwordGenerator(Integer passwordLength) {
+    String charset = (('A'..'Z') + ('a'..'z') + ('0'..'9') + ('+-*#$@!=%') - ('0O1Il')).join('')
+    new RandomStringUtils().random(passwordLength, charset.toCharArray())
 }
 
 /**
- * Convert map of jenkins pipeline params to arrayList which path is required to run a new build of jenkins job.
+ * More readable Map output.
  *
- * @param mapConfig - Map with the whole pipeline params.
- * @return - array list for jenkins pipeline running, e.g: build job: 'job_name', parameters: these_params.
+ * @param content - map content.
+ * @return - human-readable string of map.
  */
-List mapConfigToJenkinsJobParam(Map mapConfig) {
-    List jobParams = []
-    mapConfig.each {
+static String readableMap(Map content) {
+    new JsonBuilder(content).toPrettyString()
+}
+
+/**
+ * Transform json String input into a serializable HashMap.
+ *
+ * @param txt - json text input.
+ * @return - serializable HashMap.
+ */
+@NonCPS
+static Map parseJson(String txt) {
+    Map map = [:]
+    new JsonSlurper().parseText(txt).each { prop ->
+        map[prop.key] = prop.value
+    }
+    map
+}
+
+
+/**
+ * Transform yaml ArrayList input into a LazyMap
+ * (if you parse yaml list like it's in ansible and get from readYaml an array list you'll need to use this function,
+ * otherwise use readYaml to get Map directly).
+ *
+ * @param yaml - yaml ArrayList input.
+ * @return - LazyMap.
+ */
+static Map yamlToLazyMap(def yaml) {
+    parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
+}
+
+/**
+ * Flatten nested map.
+ *
+ * @param sourceMap - source map,
+ * @return - flatten map.
+ */
+static Map flattenNestedMap(Map sourceMap) {
+    Map resultMap = [:]
+    sourceMap.each {
         String paramPrefix = ''
         if (it.value instanceof Map) {
             paramPrefix = it.key.toString()
-            it.value.each { k, v -> jobParams += itemKeyToJobParam(String.format('%s_%s', paramPrefix, k), v) }
+            it.value.each { k, v -> resultMap[String.format('%s_%s', paramPrefix, k)] = v }
         } else {
-            jobParams += itemKeyToJobParam(it.key.toString(), it.value)
+            resultMap[it.key] = it.value
         }
     }
-    jobParams
+    println String.format('flatten nested map results: \n%s', resultMap)
+    resultMap
 }
 
 /**
- * Print colored event type, jenkins job name and message to job console.
+ * Find variables mentioning (e.g: $variable_name).
  *
- * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
- *                      parameter is true.
- * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
- * @param text - text to output.
+ * @param text - text to scan,
+ * @return - variables list.
  */
-def outMsg(Integer eventNumber, String text, Object envVariables = env) {
-    if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
-        wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-            List eventTypes = [
-                    '\033[0;34mDEBUG\033[0m',
-                    '\033[0;32mINFO\033[0m',
-                    '\033[0;33mWARNING\033[0m',
-                    '\033[0;31mERROR\033[0m']
-            println String.format('%s | %s | %s', envVariables.JOB_NAME, eventTypes[eventNumber], text)
+static List getVariablesMentioningFromString(String text) {
+    text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
+}
+
+/**
+ * Get filename and extension separately.
+ *
+ * @param filenameWithExtension - file name with extension.
+ * @return - list with filename and extension.
+ */
+@NonCPS
+static List getFilenameExtension(String filenameWithExtension) {
+    [FilenameUtils.removeExtension(filenameWithExtension), FilenameUtils.getExtension(filenameWithExtension)]
+}
+
+
+/** Serialize environment variables into map
+ *
+ * @param envVars - environment variables.
+ * @return - map with environment variables.
+ */
+static Map envVarsToMap(envVars) {
+    Map envVarsMap = [:]
+    envVars.getEnvironment().each { name, value -> envVarsMap.put(name, value) }
+    envVarsMap
+}
+
+/**
+ * Rename Map key names with regex.
+ *
+ * @param sourceMap - source map.
+ * @param regex - regex string.
+ * @return - result map.
+ */
+static Map regexMapKeyNames(Map sourceMap, String regex) {
+    Map resultMap = [:]
+    sourceMap.each { name, value -> resultMap.put(name.replaceAll(regex, ''), value) }
+    resultMap
+}
+
+/** Fix data typing of map values.
+ * (If source map is string with 'true', 'false', '1212121' etc)
+ *
+ * @param sourceMap - source map.
+ * @return - map with typed values.
+ */
+static Map fixMapValuesDataTyping(Map sourceMap) {
+    Map resultMap = [:]
+    sourceMap.each { name, value ->
+        if (value instanceof String && (value == 'true' || value == 'false')) {
+            resultMap.put(name, value.toBoolean())
+        } else if (value instanceof String && value.matches('\\d+')) {
+            resultMap.put(name, value.toInteger())
+        } else {
+            resultMap.put(name, value)
         }
     }
+    resultMap
+}
+
+/**
+ * Make list of enabled options from status map.
+ *
+ * @param optionsMap - Map with item status and description, e.g:
+ *                     [option_1: [state: true, description: 'text_1'],
+ *                     option_2: [state: false, description: 'text_2']].
+ * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
+ * @return - list of [enabled options list, descriptions of enabled options list].
+ */
+static List makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
+    List options = []
+    List descriptions = []
+    optionsMap.each {
+        if (it.value.get('state')) {
+            options.add(it.key)
+            if (it.value.get('description'))
+                descriptions.add(String.format(formatTemplate, it.key, it.value.description))
+        }
+    }
+    [options, descriptions]
+}
+
+/**
+ * Grep only specified states from stages status list.
+ *
+ * @param states - map including key with these states steps.
+ * @param inputKeyName - key name in this map to get failed states from.
+ * @param grepString - string pattern that should be contained to grep.
+ * @return - string of failed states list.
+ */
+@NonCPS
+static String grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
+    (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
+            .grep { it.contains(grepString) }.join('\n') : ''
 }
 
 /**
@@ -366,39 +383,159 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
 }
 
 /**
- * Password generator.
+ * Add current step (or phase) state to state map and (optional) save steps states with URLs to log file.
  *
- * @param passwordLength - number of symbols to be generated.
- * @return - password.
+ * @param states - map with pipeline steps (or phases) names and states.
+ * @param name - name of the current step (or phase).
+ * @param state - current state: false|true.
+ * @param jobUrl - url of the last job run.
+ * @param logName - path and name of the logfile to save (or leave them blank to skip saving).
+ * @param printErrorMessage - true to print error message on status error, otherwise print only debug messages.
+ * @return - map with pipeline steps (or phases) names and states including current step (or phase) state. The
+ *           structure of this map should be: key is the name with spaces cut, value should be a map of:
+ *           [name: name, state: state, url: url].
  */
-static String passwordGenerator(Integer passwordLength) {
-    String charset = (('A'..'Z') + ('a'..'z') + ('0'..'9') + ('+-*#$@!=%') - ('0O1Il')).join('')
-    new RandomStringUtils().random(passwordLength, charset.toCharArray())
-}
-
-/**
- * More readable Map output.
- *
- * @param content - map content.
- * @return - human-readable string of map.
- */
-static String readableMap(Map content) {
-    new JsonBuilder(content).toPrettyString()
-}
-
-/**
- * Transform json String input into a serializable HashMap.
- *
- * @param txt - json text input.
- * @return - serializable HashMap.
- */
-@NonCPS
-static Map parseJson(String txt) {
-    Map map = [:]
-    new JsonSlurper().parseText(txt).each { prop ->
-        map[prop.key] = prop.value
+Map addPipelineStepsAndUrls(Map states, String name, Boolean state, String jobUrl, String logName = '',
+                            Boolean printErrorMessage = true) {
+    Integer eventNumber = !state && printErrorMessage ? 3 : 0
+    String printableJobUrl = jobUrl?.trim() ? jobUrl : ''
+    states[name.replaceAll(' ', '')] = [name: name, state: state, url: printableJobUrl]
+    if (logName?.trim()) {
+        String statesTextTable = ''
+        states.each { key, value ->
+            if (value instanceof Map) {
+                statesTextTable += String.format('%s %s %s\n, ', value.name.padLeft(16), value.state.toString().
+                        replace('false', '[FAILED] ').replace('true', '[SUCCESS]'), value.url.padLeft(2))
+            }
+        }
+        writeFile file: logName, text: statesTextTable
+        archiveArtifacts allowEmptyArchive: true, artifacts: logName
     }
-    map
+    outMsg(eventNumber, String.format('%s: %s, URL: %s', name, state.toString().replace('false', 'FAILED')
+            .replace('true', 'SUCCESS'), printableJobUrl))
+    states
+}
+
+/**
+ * Convert map to jenkins job params.
+ *
+ * @param config - config input in the next keys format:
+ *
+ *                 name: config name (or just visible name);
+ *                 enabled: true|false (just the way to enable/disable without parameters removal);
+ *                 jobname: jenkins job/pipeline name to execute (will be skipped if wasn't set on checkName=false,
+ *                 or will return an empty arrayList on checkName=true);
+ *
+ *                 Other key-value parameters in this map will be converted to pipeline parameters, where:
+ *
+ *                 key - pipeline/job parameter name to pass downstream pipeline/job;
+ *                 value - pipeline/job parameter value: Boolean will be boolean, List will pass as comma separated
+ *                 string, other types will be converted to string.
+ *
+ * @param checkName - check value of 'name' key exists in map, otherwise ignore.
+ * @return - jenkins job params arrayList.
+ */
+List mapToJenkinsJobParams(Map config, Boolean checkName = true) {
+    String configName
+    List jobParams = []
+    try {
+        if (config.get('name')) {
+            configName = config.name
+        } else {
+            if (checkName) {
+                outMsg(3, '\'name\' param not found, please set visible name.')
+                return jobParams
+            } else {
+                configName = '<undefined_config_name>'
+            }
+        }
+        if (config.get('enabled') && config.get('jobname')) {
+            if (config.enabled && config.jobname?.trim()) {
+                outMsg(0, String.format('Processing current %s config: \n%s', configName,
+                        (new JsonBuilder(config).toPrettyString())))
+                jobParams = mapConfigToJenkinsJobParam(config.findAll {
+                    !it.key.startsWith('msg') && it.key != 'name' && it.key != 'enabled' && it.key != 'jobname'
+                })
+                outMsg(0, String.format('Config %s includes the next pipeline params: \n%s', configName,
+                        readableJobParams(jobParams)))
+            } else if (config.enabled && !config.jobname?.trim()) {
+                outMsg(2, String.format('%s %s %s', 'Unable to perform jenkins job parameters conversion for',
+                        configName, 'jobname in this config wasn\'t set. Skipping job run for this config.'))
+            } else if (!config.enabled) {
+                outMsg(1, String.format('%s config disabled, skipping.', configName))
+            }
+        } else {
+            outMsg(3, String.format('%s %s %s', "Unable to find 'enabled' and/or 'jobname' param(s) in",
+                    configName, 'config. Please check and try again. Config was skipped.'))
+        }
+    } catch (Exception err) {
+        outMsg(3, String.format('Converting yaml config to jenkins job params error: %s', readableError(err)))
+    }
+    jobParams
+}
+
+/**
+ * Parse map item and return them as arraylist for jenkins pipeline job param.
+ *
+ * @param key - item key name.
+ * @param value - item key value.
+ * @param type - (optional) item parameter type: string, choice, boolean, text, password or undefined to autodetect.
+ * @param upperCaseKeyName - (optional) true when convert parameters to uppercase is required.
+ * @param params - (optional) other parameters to add to them.
+ * @return - array list for jenkins pipeline job parameters.
+ */
+List itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true, List params = []) {
+    String keyName = upperCaseKeyName ? key.toUpperCase() : key
+    params += value instanceof Boolean || type == 'boolean' ? [booleanParam(name: keyName, value: value)] : []
+    params += value instanceof ArrayList ? string(name: keyName, value: value.toString().replaceAll(',', '')) : []
+    params += value instanceof String && (type == 'string' || !type?.trim()) ?
+            [string(name: keyName, value: value)] : []
+    params += value instanceof String && type == 'text' ? [text(name: keyName, value: value)] : []
+    params += value instanceof String && type == 'password' ? [password(name: keyName, value: value)] : []
+    params += value instanceof Integer || value instanceof Float || value instanceof BigInteger ?
+            [string(name: keyName, value: value.toString())] : []
+    params
+}
+
+/**
+ * Convert map of jenkins pipeline params to arrayList which path is required to run a new build of jenkins job.
+ *
+ * @param mapConfig - Map with the whole pipeline params.
+ * @return - array list for jenkins pipeline running, e.g: build job: 'job_name', parameters: these_params.
+ */
+List mapConfigToJenkinsJobParam(Map mapConfig) {
+    List jobParams = []
+    mapConfig.each {
+        String paramPrefix = ''
+        if (it.value instanceof Map) {
+            paramPrefix = it.key.toString()
+            it.value.each { k, v -> jobParams += itemKeyToJobParam(String.format('%s_%s', paramPrefix, k), v) }
+        } else {
+            jobParams += itemKeyToJobParam(it.key.toString(), it.value)
+        }
+    }
+    jobParams
+}
+
+/**
+ * Print colored event type, jenkins job name and message to job console.
+ *
+ * @param eventNumber - event type: debug, info, warning or error. Debug event output available when DEBUG_MODE pipeline
+ *                      parameter is true.
+ * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param text - text to output.
+ */
+def outMsg(Integer eventNumber, String text, Object envVariables = env) {
+    if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
+        wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+            List eventTypes = [
+                    '\033[0;34mDEBUG\033[0m',
+                    '\033[0;32mINFO\033[0m',
+                    '\033[0;33mWARNING\033[0m',
+                    '\033[0;31mERROR\033[0m']
+            println String.format('%s | %s | %s', envVariables.JOB_NAME, eventTypes[eventNumber], text)
+        }
+    }
 }
 
 /**
@@ -410,39 +547,6 @@ static Map parseJson(String txt) {
 String transliterateString(String text) {
     sh(returnStdout: true, script: String.format('python3 -c "import sys; from transliterate import ' +
         '''translit; print(translit(sys.stdin.read(), 'ru', reversed=True), end='')" <<< "%s"''', text)).trim()
-}
-
-/**
- * Transform yaml ArrayList input into a LazyMap
- * (if you parse yaml list like it's in ansible and get from readYaml an array list you'll need to use this function,
- * otherwise use readYaml to get Map directly).
- *
- * @param yaml - yaml ArrayList input.
- * @return - LazyMap.
- */
-static Map yamlToLazyMap(def yaml) {
-    parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
-}
-
-/**
- * Flatten nested map.
- *
- * @param sourceMap - source map,
- * @return - flatten map.
- */
-static Map flattenNestedMap(Map sourceMap) {
-    Map resultMap = [:]
-    sourceMap.each {
-        String paramPrefix = ''
-        if (it.value instanceof Map) {
-            paramPrefix = it.key.toString()
-            it.value.each { k, v -> resultMap[String.format('%s_%s', paramPrefix, k)] = v }
-        } else {
-            resultMap[it.key] = it.value
-        }
-    }
-    println String.format('flatten nested map results: \n%s', resultMap)
-    resultMap
 }
 
 /**
@@ -530,16 +634,6 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
 }
 
 /**
- * Find variables mentioning (e.g: $variable_name).
- *
- * @param text - text to scan,
- * @return - variables list.
- */
-static List getVariablesMentioningFromString(String text) {
-    text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
-}
-
-/**
  * Parse params map and replace $variables in every item of this map by items of replacement.
  *
  * These items should be placed in any items of params variable as a $variableName, that should be replace with value
@@ -621,17 +715,6 @@ Boolean checkRequiredVariables(List variableList, List variableValueList, Boolea
     if (errorsFound.toBoolean() && stopOnError.toBoolean())
         error 'Current job run terminated. Please specify the parameters listed above and run again.'
     errorsFound
-}
-
-/**
- * Get filename and extension separately.
- *
- * @param filenameWithExtension - file name with extension.
- * @return - list with filename and extension.
- */
-@NonCPS
-static List getFilenameExtension(String filenameWithExtension) {
-    [FilenameUtils.removeExtension(filenameWithExtension), FilenameUtils.getExtension(filenameWithExtension)]
 }
 
 /**
@@ -805,50 +888,6 @@ def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean run
     null
 }
 
-/** Serialize environment variables into map
- *
- * @param envVars - environment variables.
- * @return - map with environment variables.
- */
-static Map envVarsToMap(envVars) {
-    Map envVarsMap = [:]
-    envVars.getEnvironment().each { name, value -> envVarsMap.put(name, value) }
-    envVarsMap
-}
-
-/**
- * Rename Map key names with regex.
- *
- * @param sourceMap - source map.
- * @param regex - regex string.
- * @return - result map.
- */
-static Map regexMapKeyNames(Map sourceMap, String regex) {
-    Map resultMap = [:]
-    sourceMap.each { name, value -> resultMap.put(name.replaceAll(regex, ''), value) }
-    resultMap
-}
-
-/** Fix data typing of map values.
- * (If source map is string with 'true', 'false', '1212121' etc)
- *
- * @param sourceMap - source map.
- * @return - map with typed values.
- */
-static Map fixMapValuesDataTyping(Map sourceMap) {
-    Map resultMap = [:]
-    sourceMap.each { name, value ->
-        if (value instanceof String && (value == 'true' || value == 'false')) {
-            resultMap.put(name, value.toBoolean())
-        } else if (value instanceof String && value.matches('\\d+')) {
-            resultMap.put(name, value.toInteger())
-        } else {
-            resultMap.put(name, value)
-        }
-    }
-    resultMap
-}
-
 /**
  * Wait ssh host up/down.
  *
@@ -937,40 +976,3 @@ List getJenkinsNodes(String filterMask = '', Boolean filterByLabel = false) {
     }
     nodes
 }
-
-/**
- * Make list of enabled options from status map.
- *
- * @param optionsMap - Map with item status and description, e.g:
- *                     [option_1: [state: true, description: 'text_1'],
- *                     option_2: [state: false, description: 'text_2']].
- * @param formatTemplate - String format template, e.g: '%s - %s' (where the first is name, second is description).
- * @return - list of [enabled options list, descriptions of enabled options list].
- */
-static List makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s - %s') {
-    List options = []
-    List descriptions = []
-    optionsMap.each {
-        if (it.value.get('state')) {
-            options.add(it.key)
-            if (it.value.get('description'))
-                descriptions.add(String.format(formatTemplate, it.key, it.value.description))
-        }
-    }
-    [options, descriptions]
-}
-
-/**
- * Grep only specified states from stages status list.
- *
- * @param states - map including key with these states steps.
- * @param inputKeyName - key name in this map to get failed states from.
- * @param grepString - string pattern that should be contained to grep.
- * @return - string of failed states list.
- */
-@NonCPS
-static String grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
-    (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
-            .grep { it.contains(grepString) }.join('\n') : ''
-}
-
