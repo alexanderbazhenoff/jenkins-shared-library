@@ -519,6 +519,7 @@ List mapConfigToJenkinsJobParam(Map mapConfig) {
  * @param envVariables - environment variables (env which is class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
  * @param text - text to output.
  */
+// groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def outMsg(Integer eventNumber, String text, Object envVariables = env) {
     if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
