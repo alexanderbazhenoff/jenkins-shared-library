@@ -126,19 +126,6 @@ static Map parseJson(String txt) {
     map
 }
 
-
-/**
- * Transform yaml ArrayList input into a LazyMap
- * (if you parse yaml list like it's in ansible and get from readYaml an array list you'll need to use this function,
- * otherwise use readYaml to get Map directly).
- *
- * @param yaml - yaml ArrayList input.
- * @return - LazyMap.
- */
-static Map yamlToLazyMap(def yaml) {
-    parseJson(new JsonBuilder(yaml).toPrettyString().replaceAll('^\\[', '').replaceAll('\\]$', '').stripIndent())
-}
-
 /**
  * Flatten nested map.
  *
@@ -167,7 +154,7 @@ static Map flattenNestedMap(Map sourceMap) {
  * @return - variables list.
  */
 static List getVariablesMentioningFromString(String text) {
-    text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }
+    text.findAll('\\$[0-9a-zA-Z_]+').collect { it.replace('$', '') }  // groovylint-disable-line UnnecessaryCollectCall
 }
 
 /**
@@ -181,16 +168,14 @@ static List getFilenameExtension(String filenameWithExtension) {
     [FilenameUtils.removeExtension(filenameWithExtension), FilenameUtils.getExtension(filenameWithExtension)]
 }
 
-
 /** Serialize environment variables into map
  *
  * @param envVars - environment variables.
  * @return - map with environment variables.
  */
-static Map envVarsToMap(envVars) {
-    Map envVarsMap = [:]
-    envVars.getEnvironment().each { name, value -> envVarsMap.put(name, value) }
-    envVarsMap
+static Map envVarsToMap(Object envVars) {
+    // groovylint-disable-next-line UnnecessaryGetter
+    envVars.getEnvironment().collectEntries { k, v -> [k, v] }
 }
 
 /**
@@ -201,9 +186,19 @@ static Map envVarsToMap(envVars) {
  * @return - result map.
  */
 static Map regexMapKeyNames(Map sourceMap, String regex) {
-    Map resultMap = [:]
-    sourceMap.each { name, value -> resultMap.put(name.replaceAll(regex, ''), value) }
-    resultMap
+    sourceMap.collectEntries { k, v -> [k.replaceAll(regex, ''), v] }
+}
+
+/**
+ * Unquote non-nested map with string keys.
+ *
+ * @param map - map with string keys.
+ * @param regex - regex. By default removes opening and closing quotes, e.g. from readProperties files).
+ * @param replacement - replace to.
+ * @return - result map.
+ */
+static Map regexMapKeyValues(Map map, String regex = '^["|\']|["\']$', String replacement = '') {
+    map.collectEntries { k, v -> [k, v.replaceAll(regex, replacement)] }
 }
 
 /** Fix data typing of map values.
@@ -213,17 +208,15 @@ static Map regexMapKeyNames(Map sourceMap, String regex) {
  * @return - map with typed values.
  */
 static Map fixMapValuesDataTyping(Map sourceMap) {
-    Map resultMap = [:]
-    sourceMap.each { name, value ->
-        if (value instanceof String && (value == 'true' || value == 'false')) {
-            resultMap.put(name, value.toBoolean())
+    sourceMap.collectEntries { name, value ->
+        if (value instanceof String && value.matches('^(true|false)$')) {
+            [name, value.toBoolean()]
         } else if (value instanceof String && value.matches('\\d+')) {
-            resultMap.put(name, value.toInteger())
+            [name, value.toInteger()]
         } else {
-            resultMap.put(name, value)
+            [name, value]
         }
     }
-    resultMap
 }
 
 /**
@@ -258,7 +251,7 @@ static List makeListOfEnabledOptions(Map optionsMap, String formatTemplate = '%s
  */
 @NonCPS
 static String grepFailedStates(Map states, String inputKeyName, String grepString = '[FAILED]') {
-    (states.find{ it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
+    (states.find { it.key == inputKeyName }?.value) ? states[inputKeyName].readLines()
             .grep { it.contains(grepString) }.join('\n') : ''
 }
 
@@ -279,12 +272,13 @@ static String grepFailedStates(Map states, String inputKeyName, String grepStrin
  *           status.response_content_encoding - encoding of response (none if not encoded),
  *           status.response_content - content of http response (e.g: 'ok').
  */
-static httpsPost(String httpUrl, String data, String headerType, String contentType) {
+static Map httpsPost(String httpUrl, String data, String headerType, String contentType) {
     HttpClient httpClient = new DefaultHttpClient()
     HttpResponse response
     Map status = [:]
     try {
         HttpPost httpPost = new HttpPost(httpUrl)
+        /* groovylint-disable UnnecessarySetter, UnnecessaryGetter */
         httpPost.setHeader('Content-Type', headerType)
 
         HttpEntity reqEntity = new StringEntity(data, 'UTF-8')
@@ -298,7 +292,7 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
         HttpEntity resEntity = response.getEntity()
 
         status.response_status_line = response.getStatusLine()
-        if (resEntity != null) {
+        if (resEntity) {
             status.content_length = resEntity.getContentLength()
             status.response_is_chunked = resEntity.isChunked()
             status.response_content_encoding = resEntity.contentEncoding
@@ -306,6 +300,7 @@ static httpsPost(String httpUrl, String data, String headerType, String contentT
         }
     } finally {
         httpClient.getConnectionManager().shutdown()
+        /* groovylint-enable UnnecessarySetter, UnnecessaryGetter */
     }
     status
 }
@@ -445,9 +440,8 @@ List mapToJenkinsJobParams(Map config, Boolean checkName = true) {
             if (checkName) {
                 outMsg(3, '\'name\' param not found, please set visible name.')
                 return jobParams
-            } else {
-                configName = '<undefined_config_name>'
             }
+            configName = '<undefined_config_name>'
         }
         if (config.get('enabled') && config.get('jobname')) {
             if (config.enabled && config.jobname?.trim()) {
@@ -484,7 +478,7 @@ List mapToJenkinsJobParams(Map config, Boolean checkName = true) {
  * @param params - (optional) other parameters to add to them.
  * @return - array list for jenkins pipeline job parameters.
  */
-List itemKeyToJobParam(String key, def value, String type = '', Boolean upperCaseKeyName = true, List params = []) {
+List itemKeyToJobParam(String key, Object value, String type = '', Boolean upperCaseKeyName = true, List params = []) {
     String keyName = upperCaseKeyName ? key.toUpperCase() : key
     params += value instanceof Boolean || type == 'boolean' ? [booleanParam(name: keyName, value: value)] : []
     params += value instanceof ArrayList ? string(name: keyName, value: value.toString().replaceAll(',', '')) : []
