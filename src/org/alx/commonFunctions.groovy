@@ -480,7 +480,7 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
     Map fileToMapResults = [:]
     try {
         dir(path) {
-            List fileList = sh(returnStdout: true, script: 'ls -p ').trim().split('\n').toList()
+            List fileList = sh(returnStdout: true, script: 'ls -p ').trim().tokenize('\n')
             if (fileList) {
                 fileList.each {
                     String index = it

@@ -22,7 +22,7 @@
       "ignoreVariableNames": "__"
     },
     "size.NestedBlockDepth": {
-      "maxNestedBlockDepth": 10
+      "maxNestedBlockDepth": 5
     },
     "size.ParameterCount": {
       "enabled": false
@@ -39,16 +39,13 @@
     "Instanceof": {
       "enabled": false
     },
-    "StaticMethodsBeforeInstanceMethods": {
+    "ImplicitReturnStatement": {
+      "enabled": false
+    },
+    "ImplicitClosureParameter": {
       "enabled": false
     },
     "convention.CompileStatic": {
-      "enabled": false
-    },
-    "BlockStartsWithBlankLine": {
-      "enabled": false
-    },
-    "BlockEndsWithBlankLine": {
       "enabled": false
     },
     "DuplicateStringLiteral": {
@@ -57,6 +54,6 @@
     "DuplicateNumberLiteral": {
       "enabled": false
     },
-    "UnnecessaryReturnKeyword": "error"
+    "UnnecessaryReturnKeyword": "info"
   }
 }
