@@ -2,7 +2,7 @@ package org.alx
 
 
 /**
- * Jenkins shared library. Written by Aleksandr Bazhenov, 2021-2023.
+ * Jenkins shared library. Written by Aleksandr Bazhenov, 2021-2024.
  * Common functions to use in jenkins pipelines.
  *
  * This Source Code Form is subject to the terms of the Apache License v2.0.
@@ -121,7 +121,7 @@ static String readableMap(Map content) {
 static Map parseJson(String txt) {
     Map map = [:]
     new JsonSlurper().parseText(txt).each { prop ->
-        map[prop.key] = prop.value
+        map[prop.key as String] = prop.value
     }
     map
 }
@@ -558,12 +558,8 @@ String transliterateString(String text) {
 String runBashViaSsh(String sshHostname, String sshUsername, String sshPassword, Boolean returnStatus,
                      Boolean returnStdout, String sshCommand) {
     writeFile file: 'pass.txt', text: sshPassword
-    // groovylint-disable-next-line UnnecessaryToString
-    String bashResult = sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s '%s'",
-            sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout)
-            .toString()
-    sh 'rm -f pass.txt'
-    bashResult
+    sh(script: String.format("sshpass -f pass.txt ssh -q -o 'StrictHostKeyChecking no' %s@%s '%s'; rm -f pass.txt",
+            sshUsername, sshHostname, sshCommand), returnStatus: returnStatus, returnStdout: returnStdout).toString()
 }
 
 
@@ -583,7 +579,7 @@ Map readFilesToMap(String path, String namePrefix, String namePostfix) {
             if (fileList) {
                 fileList.each {
                     String index = it
-                    if (it.find('.')) index = it.substring(0, it.lastIndexOf('.'))
+                    if (it.contains('.')) index = it.substring(0, it.lastIndexOf('.'))
                     String fileContent = readFile(it).trim()
                     fileToMapResults[String.format('%s%s%s', namePrefix,
                             index.replaceAll('[.-]', '_'), namePostfix)] = fileContent
@@ -757,7 +753,6 @@ def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String pr
  *                             should be placed inside 'ansible_collections' folder as ansible-galaxy standards.
  * @return - true when success.
  */
-// groovylint-disable-next-line UnusedMethodParameter
 Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitBranch, List ansibleCollections,
                                         Boolean cleanupBeforeAnsibleClone = true,
                                         String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
@@ -797,7 +792,6 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
  * @return - success (true when ok).
  */
-// groovylint-disable-next-line UnusedMethodParameter
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = OrgAlxGlobals.ANSIBLE_INSTALLATION_NAME,
@@ -812,7 +806,6 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
                         cleanupBeforeAnsibleClone, gitCredentialsId)
                 if (!runAnsibleState) return false
             }
-
         } else {
             ansiblePlaybookPath += '/roles'
         }
@@ -842,6 +835,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
  *
  * @param hostsToClean - IPs, FQCNs or dns names list to clean.
  */
+// groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
         List items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
@@ -867,7 +861,7 @@ def cleanSshHostsFingerprints(List hostsToClean) {
  * @param printableJobParams - (optional) just printable
  * @return - run wrapper of current job or pipeline build, or null for skipped run.
  */
-def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
+Object dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean runJobWithDryRunParam = false,
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
                      String dryRunEnvVariableName = 'DRY_RUN', List printableJobParams = []) {
     if (runJobWithDryRunParam)
@@ -932,11 +926,10 @@ Boolean waitSshHost(String sshHostname, String sshUsername, String sshPassword, 
 String runBashScp(String sshHostname, String sshUsername, String sshPassword, String sourcePath, String destinationPath,
                   Boolean returnStatus = true, Boolean returnStdout = false, Boolean scpDirection = true) {
     writeFile file: 'pass.txt', text: sshPassword
-    String scpPathArgs = String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
-    if (scpDirection)
-        scpPathArgs = String.format('%s %s@%s:%s', sourcePath, sshUsername, sshHostname, destinationPath)
-        sh(script: String.format("sshpass -f pass.txt scp -ro 'StrictHostKeyChecking no' %s; rm -f pass.txt",
-            scpPathArgs), returnStatus: returnStatus, returnStdout: returnStdout).toString()
+    String scpPath = scpDirection ? String.format('%s %s@%s:%s', sourcePath, sshUsername, sshHostname,
+            destinationPath) : String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
+    sh(script: String.format("sshpass -f pass.txt scp -ro 'StrictHostKeyChecking no' %s; rm -f pass.txt",
+            scpPath), returnStatus: returnStatus, returnStdout: returnStdout).toString()
 }
 
 /**
