@@ -347,7 +347,7 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
     Boolean overallSendMessageState = true
     if (text.length() >= messageLength) {
         List splitMessages = []
-        List splitByEnterMessage = text.tokenize('\n').toList()
+        List splitByEnterMessage = text.tokenize('\n')
         Integer messageIndex = 0
         splitMessages[messageIndex] = ''
         Integer codeBlockMarkersCounter = 0
@@ -609,8 +609,8 @@ Map readSubdirectoriesToMap(String path, String namePrefix, String namePostfix, 
     try {
         dir(path) {
             // groovylint-disable-next-line GStringExpressionWithinString
-            List dirList = sh(returnStdout: true, script: 'for i in $(ls -d */); do echo ${i%%/}; done').trim()
-                    .split('\n').toList()
+            List dirList = sh(returnStdout: true, script: 'for i in $(ls -d */); do echo ${i%%/}; done')
+                    .trim()?.tokenize('\n')
             if (dirList)
                 dirList.findAll { !it.matches(excludeRegexp) }.each {
                     Map folderContent = readFilesToMap(it.toString(), String.format('%s%s_', namePrefix, it),
@@ -839,7 +839,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
 def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
         List items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
-                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).split('\n').toList()
+                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).tokenize('\n')
         items.each { host ->
             if (host?.trim()) sh String.format('ssh-keygen -f "%s/.ssh/known_hosts" -R %s', env.HOME, host)
         }
