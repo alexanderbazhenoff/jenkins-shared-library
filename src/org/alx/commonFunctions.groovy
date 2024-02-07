@@ -521,7 +521,7 @@ List mapConfigToJenkinsJobParam(Map mapConfig) {
  */
 // groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def outMsg(Integer eventNumber, String text, Object envVariables = env) {
-    if (eventNumber.toInteger() != 0 || envVariables.getEnvironment().get('DEBUG_MODE')?.toBoolean()) {
+    if (eventNumber.toInteger() != 0 || envVariables.DEBUG_MODE?.toBoolean()) {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
             List eventTypes = [
                     '\033[0;34mDEBUG\033[0m',
