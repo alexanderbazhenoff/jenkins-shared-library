@@ -15,7 +15,7 @@ Some common things that makes writing Jenkins pipelines easier.
     ```groovy
     #!/usr/bin/env groovy
     
-    @Library('jenkins-shared-library') _
+    @Library('jenkins-shared-library')
     
     node('master') {
         CommonFunctions = new org.alx.commonFunctions() as Object
@@ -32,7 +32,9 @@ Some common things that makes writing Jenkins pipelines easier.
     **To use library from** [`vars`](vars):
 
     ```groovy
-    @Library('jenkins-shared-library') _
+    @Library('jenkins-shared-library')
+    // or @Library(['jenkins-shared-library', 'another-library']) _
+    // if you need to use several libraries.
     
     node('master') {
         // your pipeline code then example usage of unstashParameter:
