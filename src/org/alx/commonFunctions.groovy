@@ -680,7 +680,7 @@ Map replaceVariablesInMapItemsWithValues(Map params, Map bindingValues, String n
  */
 Boolean saveMapToPropertiesFile(String path, Map values) {
     try {
-        writeFile(file: path, text: values.collect {String.format('%s=%s', it.key, it.value) }.join('\n'))
+        writeFile(file: path, text: values.collect { String.format('%s=%s', it.key, it.value) }.join('\n'))
         return true
     } catch (Exception err) {
         outMsg(3, String.format('Unable to save \'%s\' with values: \n%s\nbecause of:\n%s', path,
@@ -736,6 +736,7 @@ Boolean extractArchive(String filenameWithExtension) {
  *                           'a123b01c-456d-7890-ef01-2a34567890b1').
  * @param cleanBeforeCloning - cleanup directory before cloning.
  */
+// groovylint-disable-next-line MethodReturnTypeRequired, NoDef
 def cloneGitToFolder(String projectGitUrl, String projectGitlabBranch, String projectLocalPath = '',
                         String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID, Boolean cleanBeforeCloning = true) {
     dir(projectLocalPath) {
@@ -870,8 +871,8 @@ def dryRunJenkinsJob(String jobName, List jobParams, Boolean dryRun, Boolean run
                      Boolean propagateErrors = true, Boolean waitForComplete = true, Object envVariables = env,
                      String dryRunEnvVariableName = 'DRY_RUN', List printableJobParams = []) {
     if (runJobWithDryRunParam)
-        jobParams += [booleanParam(name: dryRunEnvVariableName, value: envVariables.getEnvironment()
-                .get(dryRunEnvVariableName)?.toBoolean())]
+        jobParams += [booleanParam(name: dryRunEnvVariableName,
+                value: envVariables[dryRunEnvVariableName]?.toBoolean())]
     if (dryRun)
         outMsg(2, String.format("Dry-run mode. Run '%s': %s. Job/pipeline parameters:\n%s", jobName,
                 runJobWithDryRunParam, readableJobParams(printableJobParams.size() ? printableJobParams : jobParams)))
@@ -934,11 +935,8 @@ String runBashScp(String sshHostname, String sshUsername, String sshPassword, St
     String scpPathArgs = String.format('%s@%s:%s %s', sshUsername, sshHostname, sourcePath, destinationPath)
     if (scpDirection)
         scpPathArgs = String.format('%s %s@%s:%s', sourcePath, sshUsername, sshHostname, destinationPath)
-    // groovylint-disable-next-line UnnecessaryToString
-    String bashResulting = sh(script: String.format("sshpass -f pass.txt scp -ro 'StrictHostKeyChecking no' %s",
+        sh(script: String.format("sshpass -f pass.txt scp -ro 'StrictHostKeyChecking no' %s; rm -f pass.txt",
             scpPathArgs), returnStatus: returnStatus, returnStdout: returnStdout).toString()
-    sh 'rm -f pass.txt'
-    bashResulting
 }
 
 /**
@@ -946,8 +944,9 @@ String runBashScp(String sshHostname, String sshUsername, String sshPassword, St
  *
  * @param sleepSeconds - sleep seconds to wait finishing up.
  */
+// groovylint-disable-next-line  MethodReturnTypeRequired, NoDef
 def interruptPipelineOk(Integer sleepSeconds = 2) {
-    currentBuild.build().getExecutor().interrupt(Result.SUCCESS)
+    currentBuild.build().getExecutor().interrupt(Result.SUCCESS)  // groovylint-disable-line UnnecessaryGetter
     sleep(time: sleepSeconds, unit: 'SECONDS')
 }
 
