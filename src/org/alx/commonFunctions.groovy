@@ -129,7 +129,7 @@ static Map parseJson(String txt) {
 /**
  * Flatten nested map.
  *
- * @param sourceMap - source map,
+ * @param sourceMap - source map.
  * @return - flatten map.
  */
 static Map flattenNestedMap(Map sourceMap) {
@@ -150,7 +150,7 @@ static Map flattenNestedMap(Map sourceMap) {
 /**
  * Find variables mentioning (e.g: $variable_name).
  *
- * @param text - text to scan,
+ * @param text - text to scan.
  * @return - variables list.
  */
 static List getVariablesMentioningFromString(String text) {
@@ -839,7 +839,7 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
 def cleanSshHostsFingerprints(List hostsToClean) {
     hostsToClean.findAll { it }.each {
         List items = (it.matches('^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$')) ? [it] : [it] + sh(script:
-                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true).tokenize('\n')
+                String.format('getent hosts %s | cut -d\' \' -f1', it), returnStdout: true)?.tokenize('\n')
         items.each { host ->
             if (host?.trim()) sh String.format('ssh-keygen -f "%s/.ssh/known_hosts" -R %s', env.HOME, host)
         }
