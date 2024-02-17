@@ -329,7 +329,7 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
         return (mattermostResponse['response_status_line'].toString().contains('200 OK'))
     }
     println String.format('Sending mattermost: %s', (mattermostResponse.response_content) ?
-            mattermostResponse.response_content : '<null or empty>'))
+            mattermostResponse.response_content : '<null or empty>')
     false
 }
 
