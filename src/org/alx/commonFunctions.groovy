@@ -324,11 +324,11 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
     } else {
         println 'Sending mattermost: Error, no http response.'
     }
-    if (mattermostResponse.get('response_status_line')) {
+    if (mattermostResponse.response_status_line) {
         if (verboseLevel >= 1) println String.format('Sending mattermost: %s', mattermostResponse.response_status_line)
         return (mattermostResponse['response_status_line'].toString().contains('200 OK'))
     }
-    println String.format('Sending mattermost: %s', (mattermostResponse.get('response_content') ?
+    println String.format('Sending mattermost: %s', (mattermostResponse.response_content) ?
             mattermostResponse.response_content : '<null or empty>'))
     false
 }
