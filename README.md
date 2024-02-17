@@ -21,22 +21,22 @@ Some common things that makes writing Jenkins pipelines easier.
         CommonFunctions = new org.alx.commonFunctions() as Object
         
         // your pipeline code and call this object by 'CommonFunctions.<functionName>', e.g:
-        CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.split(' ').toList())
+        CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.tokenize(' '))
         // where IP_LIST is a space separated string IP list which is defined by pipeline 
         // parameter IP_LIST
     }
     ```
 
     To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable, which can be defined in
-`OrgCfGlobals()` class:
+`OrgAlxGlobals()` class:
 
     ```groovy
     @Library('jenkins-shared-library')
    
     node('master') {
         CommonFunctions = new org.alx.commonFunctions() as Object  // shout be placed before GlobalConstants 
-        GlobalConstants = new org.company.OrgCfGlobals() as Object
-        // Then use constants from OrgCfGlobals        
+        GlobalConstants = new org.alx.OrgAlxGlobals() as Object
+        // Then use constants from OrgAlxGlobals        
     }
     ```
 
