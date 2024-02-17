@@ -27,7 +27,18 @@ Some common things that makes writing Jenkins pipelines easier.
     }
     ```
 
-    To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable.
+    To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable, which can be defined in 
+`OrgCfGlobals()` class:
+
+    ```groovy
+    @Library('jenkins-shared-library')
+   
+    node('master') {
+        CommonFunctions = new org.alx.commonFunctions() as Object  // shout be placed before GlobalConstants 
+        GlobalConstants = new org.company.OrgCfGlobals() as Object
+        // Then use constants from OrgCfGlobals        
+    }
+    ```
 
     **To use library from** [`vars`](vars):
 
