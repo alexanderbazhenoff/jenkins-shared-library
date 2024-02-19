@@ -88,6 +88,16 @@ static String applyReplaceRegexItems(String text, List regexItemsList, List repl
 }
 
 /**
+ * Hide password string.
+ *
+ * @param passwordString - password string to hide.
+ * @return - password with replaced symbols.
+ */
+static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
+    passwordString?.length() > 0 ? replaceSymbol * passwordString?.length() : ''
+}
+
+/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
