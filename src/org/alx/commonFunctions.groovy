@@ -70,6 +70,57 @@ class OrgAlxGlobals {
 
 
 /**
+ * Apply ReplaceAll regular expression items to string.
+ *
+ * @param text - text to process.
+ * @param regexItemsList - list of regex items to apply .replaceAll method.
+ * @param replaceItemsList - list of items to replace with. List must be the same length as a regexItemsList, otherwise
+ *                           will be replaced with empty line ''.
+ * @return - resulting text.
+ */
+static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
+    String replacedText = text
+    regexItemsList.eachWithIndex { value, Integer index ->
+        replacedText = replacedText.replaceAll(value as CharSequence,
+                replaceItemsList[index] ? replaceItemsList[index] as String : '')
+    }
+    replacedText
+}
+
+/**
+ * Hide password string.
+ *
+ * @param passwordString - password string to hide.
+ * @return - password with replaced symbols.
+ */
+static String hidePasswordString(String passwordString, String replaceSymbol = '*') {
+    passwordString?.length() > 0 ? replaceSymbol * passwordString?.length() : ''
+}
+
+/**
+ * Get jenkins node by node name or node tag defined in pipeline parameter(s).
+ *
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
+ *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
+ *                        parameter undefined or blank nodeTagParamName will be used to check.
+ * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
+ *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
+ *                           start. If this parameter defined nodeParamName will be ignored.
+ * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
+ *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
+ */
+static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
+    Object nodeToExecute = null
+    // groovylint-disable-next-line UnnecessaryGetter
+    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
+            [label: env[nodeTagParamName]] : nodeToExecute
+    // groovylint-disable-next-line UnnecessaryGetter
+    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
+}
+
+/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
@@ -102,7 +153,7 @@ static String passwordGenerator(Integer passwordLength) {
 }
 
 /**
- * More readable Map output.
+ * Get more readable Map output.
  *
  * @param content - map content.
  * @return - human-readable string of map.
