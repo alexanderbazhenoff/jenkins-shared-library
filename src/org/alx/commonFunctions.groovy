@@ -70,7 +70,7 @@ class OrgAlxGlobals {
 
 
 /**
- * Apply ReplaceAll regex items to string.
+ * Apply ReplaceAll regular expression items to string.
  *
  * @param text - text to process.
  * @param regexItemsList - list of regex items to apply .replaceAll method.
@@ -153,7 +153,7 @@ static String passwordGenerator(Integer passwordLength) {
 }
 
 /**
- * More readable Map output.
+ * Get more readable Map output.
  *
  * @param content - map content.
  * @return - human-readable string of map.
