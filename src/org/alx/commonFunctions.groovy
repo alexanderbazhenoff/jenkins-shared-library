@@ -98,6 +98,29 @@ static String hidePasswordString(String passwordString, String replaceSymbol = '
 }
 
 /**
+ * Get jenkins node by node name or node tag defined in pipeline parameter(s).
+ *
+ * @param env - environment variables for current job build (actually requires a pass of 'env' which is
+ *              class org.jenkinsci.plugins.workflow.cps.EnvActionImpl).
+ * @param nodeParamName - Jenkins node pipeline parameter name that specifies a name of jenkins node to execute on. This
+ *                        pipeline parameters will be used to check for jenkins node name on pipeline start. If this
+ *                        parameter undefined or blank nodeTagParamName will be used to check.
+ * @param nodeTagParamName - Jenkins node tag pipeline parameter name that specifies a tag of jenkins node to execute
+ *                           on. This parameter will be used to check for jenkins node selection by tag on pipeline
+ *                           start. If this parameter defined nodeParamName will be ignored.
+ * @return - null when nodeParamName or nodeTagParamName parameters found. In this case pipeline starts on any jenkins
+ *           node. Otherwise, return 'node_name' or [label: 'node_tag'].
+ */
+static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamName, String nodeTagParamName) {
+    Object nodeToExecute = null
+    // groovylint-disable-next-line UnnecessaryGetter
+    nodeToExecute = (env.getEnvironment().containsKey(nodeTagParamName) && env[nodeTagParamName]?.trim()) ?
+            [label: env[nodeTagParamName]] : nodeToExecute
+    // groovylint-disable-next-line UnnecessaryGetter
+    (env.getEnvironment().containsKey(nodeParamName) && env[nodeParamName]?.trim()) ? env[nodeParamName] : nodeToExecute
+}
+
+/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
