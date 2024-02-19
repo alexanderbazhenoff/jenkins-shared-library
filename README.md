@@ -18,25 +18,12 @@ Some common things that makes writing Jenkins pipelines easier.
     @Library('jenkins-shared-library')
     
     node('master') {
-        // To use methods and functions from commonFunctions.groovy:
         CommonFunctions = new org.alx.commonFunctions() as Object
-
-        // And/or use methods from commonMethods.groovy:
-        CommonMethods = new org.alx.commonMethods() as Object
         
         // your pipeline code and call this object by 'CommonFunctions.<functionName>', e.g:
         CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.tokenize(' '))
         // where IP_LIST is a space separated string IP list which is defined by pipeline 
         // parameter IP_LIST
-
-        // For example, replace words 'ONE', 'TWO' and 'THREE' with similar digits in a string
-        String text = 'This is some text containing ONE word and TWO word. May bet the word number THREE.'
-        List regexList = ['ONE', 'TWO', 'THREE']
-        List replacementList = ['1', '2', '3']
-        Strin resultingText = CommonMethods.applyReplaceRegexItems(text, regexList, replacementList)
-        println resultingText
-        // Output:
-        // This is some text containing 1 word and 2 word. May bet the word number 3.
     }
     ```
 

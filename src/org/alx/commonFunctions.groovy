@@ -70,6 +70,24 @@ class OrgAlxGlobals {
 
 
 /**
+ * Apply ReplaceAll regex items to string.
+ *
+ * @param text - text to process.
+ * @param regexItemsList - list of regex items to apply .replaceAll method.
+ * @param replaceItemsList - list of items to replace with. List must be the same length as a regexItemsList, otherwise
+ *                           will be replaced with empty line ''.
+ * @return - resulting text.
+ */
+static String applyReplaceRegexItems(String text, List regexItemsList, List replaceItemsList = []) {
+    String replacedText = text
+    regexItemsList.eachWithIndex { value, Integer index ->
+        replacedText = replacedText.replaceAll(value as CharSequence,
+                replaceItemsList[index] ? replaceItemsList[index] as String : '')
+    }
+    replacedText
+}
+
+/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
