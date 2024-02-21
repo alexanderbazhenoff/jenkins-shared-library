@@ -841,13 +841,14 @@ Boolean installAnsibleGalaxyCollections(String ansibleGitUrl, String ansibleGitB
  *                              Check https://issues.jenkins.io/browse/JENKINS-67209 for details.
  * @param cleanupBeforeAnsibleClone - Clean-up folder before ansible git clone.
  * @param gitCredentialsId - Git credentialsID to clone ansible project.
+ * @param directAnsibleRun - when true, run ansible-playbook directly. Otherwise, run ansible plugin.
  * @return - success (true when ok).
  */
 Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, String ansibleGitUrl = '',
                    String ansibleGitBranch = 'main', String ansibleExtras = '', List ansibleCollections = [],
                    String ansibleInstallation = OrgAlxGlobals.ANSIBLE_INSTALLATION_NAME,
                    Boolean cleanupBeforeAnsibleClone = true,
-                   String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID) {
+                   String gitCredentialsId = OrgAlxGlobals.GIT_CREDENTIALS_ID, Boolean directAnsibleRun = true) {
     Boolean runAnsibleState = true
     String ansiblePlaybookPath = 'ansible'
     try {
@@ -868,8 +869,14 @@ Boolean runAnsible(String ansiblePlaybookText, String ansibleInventoryText, Stri
             outMsg(1, String.format('Running %s from:\n%s\n%s', ansibleMode, ansiblePlaybookText, ('-' * 32)))
             // groovylint-disable-next-line DuplicateMapLiteral
             wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
-                ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini', installation: ansibleInstallation,
-                        colorized: true, extras: ansibleExtras)
+                if (directAnsibleRun) {
+                    sh String.format('%s %s ansible-playbook %s -i %s %s', 'ANSIBLE_LOAD_CALLBACK_PLUGINS=1',
+                            'ANSIBLE_STDOUT_CALLBACK=yaml ANSIBLE_FORCE_COLOR=true', 'execute.yml', 'inventory.ini',
+                            ansibleExtras)
+                } else {
+                    ansiblePlaybook(playbook: 'execute.yml', inventory: 'inventory.ini',
+                            installation: ansibleInstallation, colorized: true, extras: ansibleExtras)
+                }
             }
         }
     } catch (Exception err) {
