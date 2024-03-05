@@ -4,6 +4,7 @@ name: Super-Linter
 on:  # yamllint disable-line rule:truthy
   push: null
   pull_request: null
+permissions: read-all
 
 jobs:
   build:
@@ -19,6 +20,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Super-linter
         uses: super-linter/super-linter@latest
