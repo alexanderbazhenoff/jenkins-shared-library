@@ -40,7 +40,8 @@ Frequently used code patterns that makes writing Jenkins pipelines easier.
     @Library('jenkins-shared-library')
    
     node('master') {
-        CommonFunctions = new org.alx.commonFunctions() as Object  // shout be placed before GlobalConstants 
+        // CommonFunctions assignment and cast should be placed before GlobalConstants
+        CommonFunctions = new org.alx.commonFunctions() as Object
         GlobalConstants = new org.alx.OrgAlxGlobals() as Object
         // Then use constants from OrgAlxGlobals        
     }
