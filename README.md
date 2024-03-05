@@ -1,8 +1,13 @@
+<div align='center'>
+
 # jenkins shared library
 
-Some common things that makes writing Jenkins pipelines easier.
+Frequently used code patterns that makes writing Jenkins pipelines easier.
 
-![lint](https://github.com/alexanderbazhenoff/jenkins-shared-library/actions/workflows/lint.yml/badge.svg?branch=main)
+![Super_Linter](https://github.com/alexanderbazhenoff/jenkins-shared-library/actions/workflows/super-linter.yml/badge.svg?branch=main)
+![GitHub License](https://img.shields.io/github/license/alexanderbazhenoff/jenkins-shared-library)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+</div>
 
 ## Usage
 

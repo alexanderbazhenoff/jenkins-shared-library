@@ -1,5 +1,5 @@
 ---
-name: Lint
+name: Super-Linter
 
 on:  # yamllint disable-line rule:truthy
   push: null
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Super-linter
-        uses: super-linter/super-linter@v5
+        uses: super-linter/super-linter@latest
         env:
           DEFAULT_BRANCH: main
           # To report GitHub Actions status checks
