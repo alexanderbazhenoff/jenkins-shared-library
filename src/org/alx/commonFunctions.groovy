@@ -361,7 +361,7 @@ static Map httpsPost(String httpUrl, String data, String headerType, String cont
  *
  * @param url - url including token (e.g: https://mattermost.com/hooks/<token>).
  * @param text - text.
- * @param verboseLevel - level of verbosity, 2 - debug, 1 - normal, 0 - disable.
+ * @param verboseLevel - level of verbosity: 2 - debug, 1 - normal, 0 - disable.
  * @return - true when http OK 200.
  */
 Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verboseLevel = OrgAlxGlobals
@@ -426,6 +426,40 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
         return overallSendMessageState
     }
     sendMattermostChannelSingleMessage(url, text, verboseMsg)
+}
+
+/**
+ * Send message to telegram messenger via bot.
+ *
+ * @param sendData - data map to send with the next keys:
+ *
+ *                   chat_id (mandatory, integer or string): Unique identifier for the target chat or username of the
+ *                                                           target channel.
+ *                   text (mandatory, string): text of the message to be sent, 1-4096 characters after entities parsing.
+ *                   message_thread_id (optional, integer): unique identifier for the target message thread (topic)
+ *                                                          of the forum; for forum supergroups only.
+ *                   parse_mode (optional, string): mode for parsing entities in the message text, e.g.: markdown, html.
+ *                                                  See: https://core.telegram.org/bots/api#formatting-options
+ *                   link_preview_options (optional): link preview generation options for the message, see:
+ *                                                    https://core.telegram.org/bots/api#linkpreviewoptions
+ *                   disable_notification (optional, boolean): sends the message silently. Users will receive a
+ *                                                             notification with no sound.
+ *                   protect_content (optional, boolean): protects the contents of the sent message from forwarding
+ *                                                        and saving.
+ *                   More info and other keys: https://core.telegram.org/bots/api#sendmessage
+ * @param botToken - bot token.
+ * @param apiUrl - telegram API url.
+ * @param verboseLevel - level of verbosity: 1 - normal, 0 - disable.
+ * @return - true when ok, false when failed.
+ */
+Boolean sendTelegramMessageViaBot(Map sendData, String botToken, String apiUrl = 'https://api.telegram.org/bot',
+                                  Boolean debugOutput = false) {
+    def (String httpUrl, String contentType) = [String.format('%s%s/sendMessage', apiUrl, botToken), 'application/json']
+    if (!sendData?.chat_id || !sendData?.text) return false
+    Map telegramStatus = httpsPost(httpUrl, new JsonBuilder(sendData).toPrettyString(), contentType, contentType)
+    if (debugOutput) println readableMap(telegramStatus)?.replace(botToken, hidePasswordString(botToken)) as String
+    Boolean telegramResponseOk = new JsonSlurper().parseText(telegramStatus?.response_content as String)?.get('ok')
+    telegramStatus.response_status_line?.toString()?.contains('200 OK') && telegramResponseOk
 }
 
 /**
