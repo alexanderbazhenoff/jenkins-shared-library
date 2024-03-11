@@ -66,6 +66,10 @@ class OrgAlxGlobals {
      */
     public static final String ANSIBLE_INSTALLATION_NAME = 'home_local_bin_ansible'
 
+    /**
+     * Provide default Telegram Bot API URL (see: https://core.telegram.org/bots/api)
+     */
+    public static final String TELEGRAM_BOT_API_URL = 'https://api.telegram.org/bot'
 }
 
 
@@ -452,7 +456,7 @@ Boolean sendMattermostChannel(String url, String text, Integer verboseMsg,
  * @param verboseLevel - level of verbosity: 1 - normal, 0 - disable.
  * @return - true when ok, false when failed.
  */
-Boolean sendTelegramMessageViaBot(Map sendData, String botToken, String apiUrl = 'https://api.telegram.org/bot',
+Boolean sendTelegramMessageViaBot(Map sendData, String botToken, String apiUrl = OrgAlxGlobals.TELEGRAM_BOT_API_URL,
                                   Boolean debugOutput = false) {
     def (String httpUrl, String contentType) = [String.format('%s%s/sendMessage', apiUrl, botToken), 'application/json']
     if (!sendData?.chat_id || !sendData?.text) return false
