@@ -70,6 +70,7 @@ class OrgAlxGlobals {
      * Provide default Telegram Bot API URL (see: https://core.telegram.org/bots/api)
      */
     public static final String TELEGRAM_BOT_API_URL = 'https://api.telegram.org/bot'
+
 }
 
 
@@ -461,8 +462,9 @@ Boolean sendTelegramMessageViaBot(Map sendData, String botToken, String apiUrl =
     def (String httpUrl, String contentType) = [String.format('%s%s/sendMessage', apiUrl, botToken), 'application/json']
     if (!sendData?.chat_id || !sendData?.text) return false
     Map telegramStatus = httpsPost(httpUrl, new JsonBuilder(sendData).toPrettyString(), contentType, contentType)
-    outMsg(0, String.format('Telegram send data: %s\nResponse: %s', readableMap(sendData),
-            readableMap(telegramStatus)?.replace(botToken, hidePasswordString(botToken))))
+    if (debugOutput)
+        println String.format('Telegram send data: %s\nResponse: %s', readableMap(sendData),
+                readableMap(telegramStatus)?.replace(botToken, hidePasswordString(botToken)))
     Boolean telegramResponseOk = new JsonSlurper().parseText(telegramStatus?.response_content as String)?.get('ok')
     telegramStatus.response_status_line?.toString()?.contains('200 OK') && telegramResponseOk
 }
