@@ -461,6 +461,7 @@ Boolean sendTelegramMessageViaBot(Map sendData, String botToken, String apiUrl =
     def (String httpUrl, String contentType) = [String.format('%s%s/sendMessage', apiUrl, botToken), 'application/json']
     if (!sendData?.chat_id || !sendData?.text) return false
     Map telegramStatus = httpsPost(httpUrl, new JsonBuilder(sendData).toPrettyString(), contentType, contentType)
+    println String.format("bot token: %s", botToken)
     if (debugOutput)
         println String.format('Send data: %s\nResponse: %s', readableMap(sendData),
                 readableMap(telegramStatus)?.replace(botToken, hidePasswordString(botToken)))
