@@ -126,6 +126,19 @@ static Object getJenkinsNodeToExecuteByNameOrTag(Object env, String nodeParamNam
 }
 
 /**
+ * Get info who started current Jenkins pipeline/job.
+ *
+ * @param currentBuildData - currentBuild jenkins object.
+ * @return - a list of: who started string and jenkins login.
+ */
+static List getPipelineStartedBy(Object currentBuildData) {
+    currentBuildData.buildCauses.collect { it ->
+        (it?.shortDescription?.matches('Started.+')) ?
+                [it.shortDescription.replaceAll('Started', 'started'), it?.userId ?: 'unknown'] : null
+    }.findAll().first()
+}
+
+/**
  * Make jenkins job/pipeline parameters human readable.
  *
  * @param params - list of job/pipeline params.
@@ -787,7 +800,7 @@ Boolean saveMapToPropertiesFile(String path, Map values) {
  * @param stopOnError - true: terminate job on error, false: just output an error.
  * @return - true when missing variable.
  */
-Boolean checkRequiredVariables(List variableList, List variableValueList, Boolean stopOnError) {
+Boolean checkRequiredVariables(List variableList, List variableValueList, Boolean stopOnError = true) {
     Boolean errorsFound = false
     for (int i = 0; i < variableList.size(); i++) {
         if (!variableValueList[i]) {
