@@ -19,49 +19,49 @@ Frequently used code patterns that makes writing Jenkins pipelines easier.
 
    **To use library from** [`src/org`](src/org/alx):
 
-    ```groovy
-    #!/usr/bin/env groovy
+   ```groovy
+   #!/usr/bin/env groovy
 
-    @Library('jenkins-shared-library')
+   @Library('jenkins-shared-library')
 
-    node('master') {
-        CommonFunctions = new org.alx.commonFunctions() as Object
+   node('master') {
+       CommonFunctions = new org.alx.commonFunctions() as Object
 
-        // your pipeline code and call this object by 'CommonFunctions.<functionName>', e.g:
-        CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.tokenize(' '))
-        // where IP_LIST is a space separated string IP list which is defined by pipeline
-        // parameter IP_LIST
-    }
-    ```
+       // your pipeline code and call this object by 'CommonFunctions.<functionName>', e.g:
+       CommonFunctions.cleanSshHostsFingerprints(env.IP_LIST.tokenize(' '))
+       // where IP_LIST is a space separated string IP list which is defined by pipeline
+       // parameter IP_LIST
+   }
+   ```
 
    To use GitLab related functions (e.g. runAnsible) you should set GitCredentialsID variable, which can be defined in
    `OrgAlxGlobals()` class:
 
-    ```groovy
-    @Library('jenkins-shared-library')
+   ```groovy
+   @Library('jenkins-shared-library')
 
-    node('master') {
-        // CommonFunctions assignment and cast should be placed before GlobalConstants
-        CommonFunctions = new org.alx.commonFunctions() as Object
-        GlobalConstants = new org.alx.OrgAlxGlobals() as Object
-        // Then use constants from OrgAlxGlobals
-    }
-    ```
+   node('master') {
+       // CommonFunctions assignment and cast should be placed before GlobalConstants
+       CommonFunctions = new org.alx.commonFunctions() as Object
+       GlobalConstants = new org.alx.OrgAlxGlobals() as Object
+       // Then use constants from OrgAlxGlobals
+   }
+   ```
 
-    **To use library from** [`vars`](vars):
+   **To use library from** [`vars`](vars):
 
-    ```groovy
-    @Library('jenkins-shared-library')
-    // or @Library(['jenkins-shared-library', 'another-library']) _
-    // if you need to use several libraries.
+   ```groovy
+   @Library('jenkins-shared-library')
+   // or @Library(['jenkins-shared-library', 'another-library']) _
+   // if you need to use several libraries.
 
-    node('master') {
-        // your pipeline code then example usage of unstashParameter:
-        String fileInWorkspace = unstashParameter "JENKINS_PIPELINE_FILE_PARAMETER_NAME"
-        // Output file content
-        sh String.format('cat %s', fileInWorkspace)
-    }
-    ```
+   node('master') {
+       // your pipeline code then example usage of unstashParameter:
+       String fileInWorkspace = unstashParameter "JENKINS_PIPELINE_FILE_PARAMETER_NAME"
+       // Output file content
+       sh String.format('cat %s', fileInWorkspace)
+   }
+   ```
 
    Please also keep in mind a differences between `vars` and `src` folder organizations
    (read [**this article**](http://tdongsi.github.io/blog/2017/12/26/class-in-jenkins-shared-library/) for details).
