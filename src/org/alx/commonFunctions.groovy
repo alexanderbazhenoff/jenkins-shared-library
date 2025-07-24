@@ -367,6 +367,8 @@ static Map httpsPost(String httpUrl, String data, String headerType, String cont
             status.response_content_encoding = resEntity.contentEncoding
             status.response_content = resEntity.content.text
         }
+    } catch (Exception e) {
+        status.error = e?.message
     } finally {
         httpClient.getConnectionManager().shutdown()
         /* groovylint-enable UnnecessarySetter, UnnecessaryGetter */
@@ -387,7 +389,11 @@ Boolean sendMattermostChannelSingleMessage(String url, String text, Integer verb
     Map mattermostResponse = httpsPost(url, String.format('''payload={"text": "%s"}''', text),
             'application/x-www-form-urlencoded', 'application/JSON;charset=UTF-8')
     Map mattermostResponseData = mattermostResponse.findAll { it.key != 'request_line' }
-    if (verboseLevel > 0) println mattermostResponseData
+    if (verboseLevel > 0) {
+        if (mattermostResponse.error)
+            println String.format("Error sending mattermost message: ", mattermostResponse.error)
+        println mattermostResponseData
+    }
     if (mattermostResponseData) {
         if (verboseLevel == 2) println String.format('Sending mattermost: %s', readableMap(mattermostResponseData))
     } else {
